@@ -1,0 +1,64 @@
+/* Overlay for readability */
+.dashboard-overlay {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.2); /* soft overlay */
+  z-index: 0;
+}
+
+/* Ensure content sits above overlay */
+.dashboard-page > *:not(.dashboard-overlay) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Cards style */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Tables */
+.table {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+}
+
+/* Small circular icon buttons for actions */
+.btn-action {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-action:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.btn-view { background-color: #3b82f6; color: #fff; }
+.btn-edit { background-color: #10b981; color: #fff; }
+.btn-delete { background-color: #ef4444; color: #fff; }
+
+/* Progress bars */
+.progress {
+  height: 20px;
+  border-radius: 8px;
+}
+.progress-bar {
+  line-height: 20px;
+  font-weight: 500;
+}

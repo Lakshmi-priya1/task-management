@@ -1,0 +1,397 @@
+
+
+
+/* purple theme variables */
+:root {
+  --purple-100: #f3e8ff;
+  --purple-200: #e9d5ff;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-600: #9333ea;
+  --purple-700: #7e22ce;
+  --purple-800: #6b21a8;
+  --purple-900: #581c87;
+  --sidebar-bg: var(--purple-900);
+  --sidebar-hover: var(--purple-700);
+  --text-light: #f3e8ff;
+}
+
+.custom-toast{
+  background: linear-gradient(135deg,var(--purple-300),var(--purple-500));
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  min-width: 260px;
+  overflow: hidden;
+
+  animation: slideInRight 0.5s ease;
+}
+
+.custom-header{
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Slide animation */
+@keyframes slideInRight {
+
+  from{
+    transform: translateX(120%);
+    opacity: 0;
+  }
+
+  to{
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+}
+
+.dropdown-menu {
+  right: 0;
+  left: auto;
+  min-width: 180px;
+}
+.change-password-container {
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.change-password-card {
+  width: 400px;
+  border-radius: 10px;
+}
+
+.card h3 {
+  font-weight: 600;
+}
+.sidebar {
+  background: var(--sidebar-bg);
+  color: var(--text-light);
+  height: 100vh;
+  position: fixed;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* dashboard liquid glass effect */
+.dashboard-container {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s ease;
+}
+
+/* table-responsive styling remains simple */
+.table-responsive {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* modern data table overrides (compact version) */
+.data-table .table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table .table thead th {
+  background: var(--purple-800);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.data-table .table tbody tr {
+  background: #fff;
+  /* remove shadow and any vertical spacing to compress layout */
+  transition: background 0.2s ease;
+}
+
+.data-table .table tbody td {
+  border: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.data-table .table tbody tr:hover {
+  background: var(--purple-100);
+}
+
+.data-table .actions .btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.data-table .actions .btn i {
+  font-size: 0.9rem;
+}
+
+.sidebar-content {
+  padding: 20px;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+}
+
+.menu li {
+  margin-bottom: 10px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  text-decoration: none;
+  color: var(--purple-200);
+  padding: 12px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.menu-item:hover,
+.menu-item.active {
+  background: var(--sidebar-hover);
+  color: #fff;
+  transform: translateX(5px);
+}
+
+.icon {
+  font-size: 18px;
+}
+
+/* Topbar modifications */
+.bg-light {
+  background: var(--purple-100) !important;
+}
+
+.btn-outline-dark {
+  border-color: var(--purple-700);
+  color: var(--purple-700);
+}
+
+.btn-outline-dark:hover {
+  background: var(--purple-700);
+  color: #fff;
+}
+
+/* table theme */
+.table-dark {
+  background-color: var(--purple-800) !important;
+  color: #fff;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--purple-300);
+}
+
+.card {
+  border: 1px solid var(--purple-300);
+}
+
+.card-header {
+  background: var(--purple-700);
+  color: #fff;
+}
+
+/* search input focus */
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem var(--purple-300);
+  border-color: var(--purple-500);
+}
+
+/* pagination buttons */
+.btn-outline-secondary {
+  border-color: var(--purple-600);
+  color: var(--purple-600);
+}
+
+.btn-outline-secondary:hover {
+  background: var(--purple-600);
+  color: #fff;
+}
+
+/* modal and form buttons */
+.modal-header {
+  background: var(--purple-600);
+  color: #fff;
+}
+
+/* utility backgrounds */
+.bg-purple { background-color: var(--purple-600) !important; }
+.bg-purple-light { background-color: var(--purple-400) !important; }
+.bg-purple-300 { background-color: var(--purple-300) !important; }
+
+.btn-primary {
+  background-color: var(--purple-600) !important;
+  border-color: var(--purple-600) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--purple-700) !important;
+  border-color: var(--purple-700) !important;
+}
+
+/* Page fade animation */
+.page-content {
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Welcome card */
+.welcome-card {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #b5c4f0, #b488f6);
+  color: white;
+  overflow: hidden;
+  position: relative;
+  animation: slideDown 0.6s ease;
+}
+
+/* Gradient shimmer animation */
+.welcome-card::before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.3),
+    transparent
+  );
+  top: -50%;
+  left: -50%;
+  transform: rotate(25deg);
+  animation: shimmer 5s infinite linear;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  to {
+    transform: translateX(100%) rotate(25deg);
+  }
+}
+
+
+/* Welcome card entrance */
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+/* Welcome icon */
+.welcome-icon {
+  background: rgba(255,255,255,0.25);
+  padding: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulseIcon 2s infinite;
+}
+
+/* Icon pulse animation */
+@keyframes pulseIcon {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+
+/* Stat cards */
+.stat-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+/* Stat card hover */
+.stat-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+}
+
+
+/* Chart cards */
+.chart-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Chart hover animation */
+.chart-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+
+/* Card load animation */
+.card {
+  animation: fadeCard 0.7s ease;
+}
+
+@keyframes fadeCard {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Chart animation */
+.recharts-wrapper {
+  animation: chartFade 1s ease;
+}
+
+@keyframes chartFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
