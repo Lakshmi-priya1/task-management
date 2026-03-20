@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ToastMessage from "../components/ToastMessage";
-import { FaFacebookF, FaGoogle, FaTwitter, FaInstagram, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaFacebookF, FaGoogle, FaTwitter, FaInstagram, FaEye, FaEyeSlash ,FaGithub} from "react-icons/fa";
 import vector from "../assets/vector.jpg";
 import "../assets/Auth.css";
 import { loginUser } from "../services/authService";
@@ -76,7 +76,7 @@ function Login() {
             <div className="social-btn"><FaFacebookF /></div>
             <div className="social-btn"><FaGoogle /></div>
             <div className="social-btn"><FaTwitter /></div>
-            <div className="social-btn"><FaInstagram /></div>
+            <div className="social-btn"><FaGithub /></div>
           </div>
 
           <p className="text-muted mb-3">or use your email</p>

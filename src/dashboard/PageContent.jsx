@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FaUsers, FaBuilding, FaChartLine, FaUserCheck } from "react-icons/fa";
-import { getEmployees } from "../services/employeeService";
+import { FaTasks, FaCheckCircle, FaHourglassHalf, FaList } from "react-icons/fa";
+
+import { getAllTasks } from "../services/taskService";
 
 import {
   PieChart,
@@ -17,138 +18,95 @@ import {
 } from "recharts";
 
 function PageContent() {
-
-  const [employees, setEmployees] = useState([]);
-
-  /* FETCH EMPLOYEES */
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-
-    getEmployees()
+    getAllTasks()
       .then(data => {
-
-        const formattedEmployees = data.map(user => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          department: user.company?.name || "General"
-        }));
-
-        setEmployees(formattedEmployees);
-
+        setTasks(Array.isArray(data) ? data : data.data || []);
       })
       .catch(err => console.log(err));
-
   }, []);
 
-  /* EMPLOYEE DASHBOARD CARDS */
+  const totalTasks = tasks.length;
 
-  const totalEmployees = employees.length;
+  const completed = tasks.filter(t => t.status === "COMPLETED").length;
 
-  const departments = new Set(
-    employees.map(emp => emp.department)
-  ).size;
+  const pending = tasks.filter(t => t.status === "PENDING").length;
 
-  const activeEmployees = Math.floor(totalEmployees * 0.8);
-  const growth = "+12%";
-
-  /* TASK DATA FOR CHARTS */
-
-  const tasks = [
-    { id: 1, title: "Fix Login Bug", status: "In Progress" },
-    { id: 2, title: "Update Dashboard", status: "Pending" },
-    { id: 3, title: "Deploy Application", status: "Completed" },
-    { id: 4, title: "API Integration", status: "Completed" },
-  ];
-
-  const completed = tasks.filter(t => t.status === "Completed").length;
-  const pending = tasks.filter(t => t.status === "Pending").length;
-  const progress = tasks.filter(t => t.status === "In Progress").length;
+  const inProgress = tasks.filter(t => t.status === "IN_PROGRESS").length;
 
   const chartData = [
     { name: "Completed", value: completed },
-    { name: "In Progress", value: progress },
+    { name: "In Progress", value: inProgress },
     { name: "Pending", value: pending }
   ];
 
   const COLORS = ["#22c55e", "#3b82f6", "#f59e0b"];
 
   return (
-
     <div className="container-fluid page-content">
 
       {/* WELCOME */}
-
       <div className="card shadow mb-4">
         <div className="card-body d-flex justify-content-between align-items-center">
-
           <div>
             <h3 className="fw-bold mb-1">Welcome Back 👋</h3>
             <p className="mb-0">
-              Monitor employees and track task progress.
+              Monitor tasks and track progress efficiently.
             </p>
           </div>
-
-          <FaUsers size={40} />
-
+          <FaTasks size={40} />
         </div>
       </div>
 
-      {/* DASHBOARD CARDS */}
-
+      {/* 🔥 TASK STATS CARDS */}
       <div className="row mb-4">
 
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
-            <FaUsers size={25} className="mb-2 text-primary" />
-            <h6>Total Employees</h6>
-            <h3>{totalEmployees}</h3>
+            <FaList size={22} className="mb-2 text-dark" />
+            <h6>Total Tasks</h6>
+            <h3>{totalTasks}</h3>
           </div>
         </div>
 
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
-            <FaBuilding size={25} className="mb-2 text-success" />
-            <h6>Departments</h6>
-            <h3>{departments}</h3>
+            <FaCheckCircle size={22} className="mb-2 text-success" />
+            <h6>Completed</h6>
+            <h3 className="text-success">{completed}</h3>
           </div>
         </div>
 
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
-            <FaChartLine size={25} className="mb-2 text-warning" />
-            <h6>Growth</h6>
-            <h3>{growth}</h3>
+            <FaHourglassHalf size={22} className="mb-2 text-primary" />
+            <h6>In Progress</h6>
+            <h3 className="text-primary">{inProgress}</h3>
           </div>
         </div>
 
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
-            <FaUserCheck size={25} className="mb-2 text-info" />
-            <h6>Active Employees</h6>
-            <h3>{activeEmployees}</h3>
+            <FaTasks size={22} className="mb-2 text-warning" />
+            <h6>Pending</h6>
+            <h3 className="text-warning">{pending}</h3>
           </div>
         </div>
 
       </div>
 
-      {/* TASK CHARTS */}
-
+      {/* 📊 CHARTS */}
       <div className="row mb-4">
 
         {/* PIE CHART */}
-
         <div className="col-md-6">
           <div className="card shadow p-3">
-
-            <h5 className="text-center mb-3">
-              Task Distribution
-            </h5>
+            <h5 className="text-center mb-3">Task Distribution</h5>
 
             <ResponsiveContainer width="100%" height={300}>
-
               <PieChart>
-
                 <Pie
                   data={chartData}
                   dataKey="value"
@@ -157,55 +115,34 @@ function PageContent() {
                   outerRadius={100}
                   label
                 >
-
                   {chartData.map((entry, index) => (
                     <Cell key={index} fill={COLORS[index]} />
                   ))}
-
                 </Pie>
-
                 <Tooltip />
-
               </PieChart>
-
             </ResponsiveContainer>
-
           </div>
         </div>
 
         {/* BAR CHART */}
-
         <div className="col-md-6">
           <div className="card shadow p-3">
-
-            <h5 className="text-center mb-3">
-              Task Status Chart
-            </h5>
+            <h5 className="text-center mb-3">Task Status Chart</h5>
 
             <ResponsiveContainer width="100%" height={300}>
-
               <BarChart data={chartData}>
-
                 <CartesianGrid strokeDasharray="3 3" />
-
                 <XAxis dataKey="name" />
-
                 <YAxis />
-
                 <Tooltip />
-
                 <Legend />
-
                 <Bar dataKey="value">
-
                   {chartData.map((entry, index) => (
                     <Cell key={index} fill={COLORS[index]} />
                   ))}
-
                 </Bar>
-
               </BarChart>
-
             </ResponsiveContainer>
 
           </div>
@@ -214,7 +151,6 @@ function PageContent() {
       </div>
 
     </div>
-
   );
 }
 

@@ -1,6 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import ExportButtons from "../components/ExportButtons";
-import "./../assets/DataTable.css"; // Make sure this CSS file is included
+import "./../assets/DataTable.css";
+
+// ✅ Date formatter inside DataTable
+const formatDate = (date) => {
+  if (!date) return "";
+
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 function DataTable({
   title,
@@ -19,10 +30,11 @@ function DataTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
-  // Filter data based on search
+  // 🔍 Filter
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;
     const q = searchQuery.toLowerCase();
+
     return data.filter((item) =>
       fields.some((f) =>
         String(item[f] || "").toLowerCase().includes(q)
@@ -30,30 +42,45 @@ function DataTable({
     );
   }, [data, fields, searchQuery]);
 
-  // Sort data
+  // 🔽 Sort
   const sortedData = useMemo(() => {
     if (!sortConfig.field) return filteredData;
+
     return [...filteredData].sort((a, b) => {
-      const aVal = a[sortConfig.field];
-      const bVal = b[sortConfig.field];
+      let aVal = a[sortConfig.field];
+      let bVal = b[sortConfig.field];
+
+      // ✅ Proper date sorting
+      if (sortConfig.field === "dueDate") {
+        aVal = new Date(aVal);
+        bVal = new Date(bVal);
+      }
+
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       return 0;
     });
   }, [filteredData, sortConfig]);
 
-  // Pagination
+  // 📄 Pagination
   const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
+
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
     return sortedData.slice(start, start + rowsPerPage);
   }, [sortedData, currentPage, rowsPerPage]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setCurrentPage(1), [searchQuery, rowsPerPage, data]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [searchQuery, rowsPerPage, data]);
 
   const handleSort = (field) => {
-    const direction = sortConfig.field === field && sortConfig.direction === "asc" ? "desc" : "asc";
+    const direction =
+      sortConfig.field === field && sortConfig.direction === "asc"
+        ? "desc"
+        : "asc";
+
     setSortConfig({ field, direction });
   };
 
@@ -79,6 +106,7 @@ function DataTable({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
+
         <select
           className="datatable-rows"
           value={rowsPerPage}
@@ -97,7 +125,7 @@ function DataTable({
         <table className="datatable-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th>Id</th>
               {columns.map((col, i) => (
                 <th key={i} onClick={() => handleSort(fields[i])}>
                   {col} {renderSortIcon(fields[i])}
@@ -106,6 +134,7 @@ function DataTable({
               <th>Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
@@ -117,9 +146,15 @@ function DataTable({
               paginatedData.map((item, idx) => (
                 <tr key={item.id} className="datatable-row">
                   <td>{(currentPage - 1) * rowsPerPage + idx + 1}</td>
+
                   {fields.map((field, i) => (
-                    <td key={i}>{item[field]}</td>
+                    <td key={i}>
+                      {field === "dueDate"
+                        ? formatDate(item[field]) // ✅ DATE FORMATTED HERE
+                        : item[field]}
+                    </td>
                   ))}
+
                   <td className="datatable-actions">
                     {handleView && (
                       <button
@@ -133,6 +168,7 @@ function DataTable({
                         <i className="bi bi-eye"></i>
                       </button>
                     )}
+
                     {handleEdit && (
                       <button
                         onClick={(e) => {
@@ -145,6 +181,7 @@ function DataTable({
                         <i className="bi bi-pencil"></i>
                       </button>
                     )}
+
                     {handleDelete && (
                       <button
                         onClick={(e) => {
@@ -167,7 +204,13 @@ function DataTable({
 
       {/* Pagination */}
       <div className="datatable-pagination">
-        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Prev</button>
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((p) => p - 1)}
+        >
+          Prev
+        </button>
+
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
@@ -177,7 +220,13 @@ function DataTable({
             {i + 1}
           </button>
         ))}
-        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
+
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((p) => p + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

@@ -23,16 +23,15 @@ function App() {
        
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* 🔒 PROTECTED ROUTES */}
         <Route
           path="/dashboard"
           element={
-            //<ProtectedRoute>
+           // <ProtectedRoute>
               <Dashboard />
-            //</ProtectedRoute>
+            // </ProtectedRoute>
           }
         >
-          {/* ✅ CHILD ROUTES MUST BE INSIDE */}
+         
           <Route index element={<PageContent />} />
           <Route path="users" element={<Users />} />
           <Route path="employee" element={<Employee />} />
