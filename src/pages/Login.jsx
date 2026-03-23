@@ -1,7 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ToastMessage from "../components/ToastMessage";
-import { FaGoogle, FaTwitter, FaEye, FaEyeSlash ,FaGithub} from "react-icons/fa";
+import {
+  FaGoogle,
+  FaTwitter,
+  FaEye,
+  FaEyeSlash,
+  FaGithub,
+} from "react-icons/fa";
 import vector from "../assets/vector.jpg";
 import "../assets/Auth.css";
 import { loginUser } from "../services/authService";
@@ -12,7 +18,7 @@ function Login() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    remember: false
+    remember: false,
   });
 
   const [toastMessage, setToastMessage] = useState(null);
@@ -22,7 +28,7 @@ function Login() {
     const { name, value, type, checked } = e.target;
     setForm({
       ...form,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -46,17 +52,21 @@ function Login() {
     try {
       const response = await loginUser({
         email: form.email,
-        password: form.password
+        password: form.password,
       });
 
-      const token = response.token || response.accessToken || response.jwt || response.data?.token;
+      const token =
+        response.token ||
+        response.accessToken ||
+        response.jwt ||
+        response.data?.token;
 
       if (token) localStorage.setItem("token", token);
 
       showToast("Logged in successfully");
 
       setTimeout(() => navigate("/dashboard"), 1000);
-    // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       showToast("Invalid email or password", "error");
     }
@@ -73,13 +83,18 @@ function Login() {
           <h3 className="mb-4">Login</h3>
 
           <div className="social-icons">
-           
-            <div className="social-btn"><FaGoogle /></div>
-            <div className="social-btn"><FaTwitter /></div>
-            <div className="social-btn"><FaGithub /></div>
+            <div className="social-btn">
+              <FaGoogle />
+            </div>
+            <div className="social-btn">
+              <FaTwitter />
+            </div>
+            <div className="social-btn">
+              <FaGithub />
+            </div>
           </div>
 
-          <p >or use your email</p>
+          <p>or use your email</p>
 
           <form onSubmit={handleLogin}>
             <input
@@ -100,7 +115,10 @@ function Login() {
                 value={form.password}
                 onChange={handleChange}
               />
-              <span className="password-toggle" onClick={togglePasswordVisibility}>
+              <span
+                className="password-toggle"
+                onClick={togglePasswordVisibility}
+              >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </span>
             </div>
@@ -121,8 +139,6 @@ function Login() {
 
             <button className="btn btn-primary w-100 mt-3">Login</button>
           </form>
-
-          
         </div>
       </div>
 

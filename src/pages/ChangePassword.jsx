@@ -1,18 +1,16 @@
 import { useState } from "react";
 
-
 function ChangePassword() {
-
   const [form, setForm] = useState({
     oldPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
 
   const handleChange = (e) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -29,15 +27,11 @@ function ChangePassword() {
 
   return (
     <div className="change-password-container">
-
       <div className="card shadow change-password-card">
-
         <div className="card-body">
-
           <h3 className="text-center mb-4">Change Password</h3>
 
           <form onSubmit={handleSubmit}>
-
             <div className="mb-3">
               <label className="form-label">Old Password</label>
               <input
@@ -80,12 +74,9 @@ function ChangePassword() {
             <button type="submit" className="btn btn-primary w-100">
               Update Password
             </button>
-
           </form>
-
         </div>
       </div>
-
     </div>
   );
 }

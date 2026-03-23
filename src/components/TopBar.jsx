@@ -37,26 +37,19 @@ function Topbar({ toggleSidebar }) {
       const decoded = jwtDecode(token);
 
       const rawName =
-        decoded?.username ||
-        decoded?.email ||
-        decoded?.sub ||
-        "User";
+        decoded?.username || decoded?.email || decoded?.sub || "User";
 
-      const nameOnly = rawName.includes("@")
-        ? rawName.split("@")[0]
-        : rawName;
+      const nameOnly = rawName.includes("@") ? rawName.split("@")[0] : rawName;
 
       const formattedName =
         nameOnly.charAt(0).toUpperCase() + nameOnly.slice(1);
 
       setUsername(formattedName);
-
     } catch (error) {
       console.error("Token decode error:", error);
       setUsername("User");
     }
   }, []);
-
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -66,13 +59,11 @@ function Topbar({ toggleSidebar }) {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <div className="topbar-container shadow-sm">
-
       {/* Sidebar Toggle */}
       <button className="toggle-btn" onClick={toggleSidebar}>
         ☰
@@ -81,11 +72,8 @@ function Topbar({ toggleSidebar }) {
       {/* USER DROPDOWN */}
       <div className="dropdown" ref={dropdownRef}>
         <button className="profile-btn" onClick={toggleDropdown}>
-          
           {/* 🔥 Avatar */}
-          <div className="avatar-circle">
-            {username.charAt(0)}
-          </div>
+          <div className="avatar-circle">{username.charAt(0)}</div>
 
           {/* Text */}
           <span className="welcome-text">
@@ -107,7 +95,9 @@ function Topbar({ toggleSidebar }) {
             </Link>
           </li>
 
-          <li><hr className="dropdown-divider" /></li>
+          <li>
+            <hr className="dropdown-divider" />
+          </li>
 
           <li>
             <button
@@ -119,7 +109,6 @@ function Topbar({ toggleSidebar }) {
           </li>
         </ul>
       </div>
-
     </div>
   );
 }

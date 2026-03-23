@@ -7,25 +7,19 @@ function Sidebar({ collapsed }) {
       className="sidebar"
       style={{
         width: collapsed ? "80px" : "250px",
-        transition: "width 0.3s ease"
+        transition: "width 0.3s ease",
       }}
     >
       <div className="sidebar-content">
+        <div className="logo">{collapsed ? "AP" : "Admin Panel"}</div>
 
-    
-        <div className="logo">
-          {collapsed ? "AP" : "Admin Panel"}
-        </div>
-
-  
         <ul className="menu">
-
           {!collapsed && <p className="menu-title">MAIN</p>}
 
           <li>
             <NavLink
               to="/dashboard"
-               end
+              end
               className={({ isActive }) =>
                 `menu-item ${isActive ? "active" : ""}`
               }
@@ -60,9 +54,7 @@ function Sidebar({ collapsed }) {
               {!collapsed && <span>Tasks</span>}
             </NavLink>
           </li>
-
         </ul>
-
       </div>
     </div>
   );

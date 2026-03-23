@@ -1,7 +1,6 @@
 import * as XLSX from "xlsx";
 
 function BulkUpload({ setTasks }) {
-
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -24,7 +23,7 @@ function BulkUpload({ setTasks }) {
         title: row.Title || "",
         description: row.Description || "",
         status: row.Status || "Pending",
-        dueDate: row.DueDate || ""
+        dueDate: row.DueDate || "",
       }));
 
       setTasks((prev) => [...prev, ...formattedTasks]);
@@ -34,15 +33,15 @@ function BulkUpload({ setTasks }) {
   };
 
   return (
-    <label className="btn btn-outline-dark">
-  <i className="bi bi-upload me-1"></i> Bulk Upload
-  <input
-    type="file"
-    accept=".xlsx,.xls,.csv"
-    hidden
-    onChange={handleFileUpload}
-  />
-</label>
+    <label className="btn btn-secondary">
+      <i className="bi bi-upload me-1"></i> Bulk Upload
+      <input
+        type="file"
+        accept=".xlsx,.xls,.csv,.pdf,.jpg,.png,.svg"
+        hidden
+        onChange={handleFileUpload}
+      />
+    </label>
   );
 }
 

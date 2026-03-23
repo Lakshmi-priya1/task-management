@@ -7,7 +7,6 @@ import "../assets/Register.css";
 import { registerUser } from "../services/authService"; // ✅ IMPORT ADDED
 
 function Register() {
-
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -21,7 +20,7 @@ function Register() {
     departmentId: "",
     phone: "",
     designation: "",
-    status: ""
+    status: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -42,25 +41,21 @@ function Register() {
 
     if (!form.username) newErrors.username = "Username is required";
 
-    if (!form.email)
-      newErrors.email = "Email is required";
+    if (!form.email) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(form.email))
       newErrors.email = "Enter valid email";
 
-    if (!form.password)
-      newErrors.password = "Password required";
+    if (!form.password) newErrors.password = "Password required";
     else if (form.password.length < 8)
       newErrors.password = "Min 8 characters required";
 
     if (!form.firstName) newErrors.firstName = "First name required";
 
-    if (!form.phone)
-      newErrors.phone = "Phone required";
+    if (!form.phone) newErrors.phone = "Phone required";
     else if (!/^\d{10}$/.test(form.phone))
       newErrors.phone = "Enter valid 10-digit phone";
 
-    if (!form.status)
-      newErrors.status = "Select status";
+    if (!form.status) newErrors.status = "Select status";
 
     return newErrors;
   };
@@ -85,7 +80,6 @@ function Register() {
       showToast("Registration successful 🎉");
 
       setTimeout(() => navigate("/"), 2000);
-
     } catch (error) {
       console.error("Register Error:", error);
       showToast("Registration failed ❌", "error");
@@ -94,7 +88,6 @@ function Register() {
 
   return (
     <div className="register-container">
-
       {/* LEFT IMAGE */}
       <div className="register-image">
         <img src={vector} alt="register" />
@@ -102,25 +95,29 @@ function Register() {
 
       {/* RIGHT FORM */}
       <div className="register-form">
-
         <h3 className="mb-3">Create Account</h3>
 
         {/* Social Icons */}
         <div className="social-icons mb-3">
-          <div className="social-btn"><FaFacebookF /></div>
-          <div className="social-btn"><FaGoogle /></div>
-          <div className="social-btn"><FaTwitter /></div>
-          <div className="social-btn"><FaInstagram /></div>
+          <div className="social-btn">
+            <FaFacebookF />
+          </div>
+          <div className="social-btn">
+            <FaGoogle />
+          </div>
+          <div className="social-btn">
+            <FaTwitter />
+          </div>
+          <div className="social-btn">
+            <FaInstagram />
+          </div>
         </div>
 
         <p className="text-muted mb-3">or register with your details</p>
 
         <div className="form-box">
-
           <form onSubmit={handleRegister}>
-
             <div className="register-grid">
-
               <input
                 name="employeeId"
                 placeholder="Employee ID"
@@ -135,7 +132,9 @@ function Register() {
                 onChange={handleChange}
                 className={errors.username ? "is-invalid" : ""}
               />
-              {errors.username && <div className="invalid-feedback">{errors.username}</div>}
+              {errors.username && (
+                <div className="invalid-feedback">{errors.username}</div>
+              )}
 
               <input
                 name="firstName"
@@ -144,7 +143,9 @@ function Register() {
                 onChange={handleChange}
                 className={errors.firstName ? "is-invalid" : ""}
               />
-              {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+              {errors.firstName && (
+                <div className="invalid-feedback">{errors.firstName}</div>
+              )}
 
               <input
                 name="lastName"
@@ -160,7 +161,9 @@ function Register() {
                 onChange={handleChange}
                 className={errors.email ? "is-invalid" : ""}
               />
-              {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+              {errors.email && (
+                <div className="invalid-feedback">{errors.email}</div>
+              )}
 
               <input
                 type="password"
@@ -170,7 +173,9 @@ function Register() {
                 onChange={handleChange}
                 className={errors.password ? "is-invalid" : ""}
               />
-              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+              {errors.password && (
+                <div className="invalid-feedback">{errors.password}</div>
+              )}
 
               <input
                 name="phone"
@@ -179,7 +184,9 @@ function Register() {
                 onChange={handleChange}
                 className={errors.phone ? "is-invalid" : ""}
               />
-              {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+              {errors.phone && (
+                <div className="invalid-feedback">{errors.phone}</div>
+              )}
 
               <input
                 name="designation"
@@ -212,21 +219,23 @@ function Register() {
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
               </select>
-              {errors.status && <div className="invalid-feedback">{errors.status}</div>}
-
+              {errors.status && (
+                <div className="invalid-feedback">{errors.status}</div>
+              )}
             </div>
 
             <button type="submit" className="register-btn full-width">
               Register
             </button>
-
           </form>
 
           <p className="mt-3">
             Already have an account?
-            <Link to="/" className="text-decoration-none"> Login here</Link>
+            <Link to="/" className="text-decoration-none">
+              {" "}
+              Login here
+            </Link>
           </p>
-
         </div>
       </div>
 
@@ -238,7 +247,6 @@ function Register() {
           type={toastMessage.type}
         />
       )}
-
     </div>
   );
 }

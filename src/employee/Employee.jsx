@@ -10,11 +10,10 @@ import {
   getEmployees,
   addEmployee,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
 } from "../services/employeeService";
 
 function Employee() {
-
   const [employees, setEmployees] = useState([]);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const navigate = useNavigate();
@@ -31,16 +30,15 @@ function Employee() {
     departmentId: "",
     phone: "",
     designation: "",
-    status: ""
+    status: "",
   });
 
   /* ================= FETCH ================= */
 
   useEffect(() => {
     getEmployees()
-      .then(data => {
-
-        const formattedEmployees = data.map(user => ({
+      .then((data) => {
+        const formattedEmployees = data.map((user) => ({
           id: user.id,
           employeeId: user.employeeId,
           username: user.username,
@@ -52,13 +50,12 @@ function Employee() {
           designation: user.designation,
           status: user.status,
           roleId: user.roleId,
-          departmentId: user.departmentId
+          departmentId: user.departmentId,
         }));
 
         setEmployees(formattedEmployees);
-
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
   }, []);
 
   /* ================= RESET ================= */
@@ -77,7 +74,7 @@ function Employee() {
       departmentId: "",
       phone: "",
       designation: "",
-      status: ""
+      status: "",
     });
   };
 
@@ -87,24 +84,22 @@ function Employee() {
     e.preventDefault();
 
     try {
-
       if (editingEmployee) {
         // eslint-disable-next-line no-unused-vars
-        const updated = await updateEmployee(
-          editingEmployee.id,
-          employeeForm
-        );
+        const updated = await updateEmployee(editingEmployee.id, employeeForm);
 
         setEmployees(
-          employees.map(emp =>
+          employees.map((emp) =>
             emp.id === editingEmployee.id
-              ? { ...emp, ...employeeForm, name: `${employeeForm.firstName} ${employeeForm.lastName}` }
-              : emp
-          )
+              ? {
+                  ...emp,
+                  ...employeeForm,
+                  name: `${employeeForm.firstName} ${employeeForm.lastName}`,
+                }
+              : emp,
+          ),
         );
-
       } else {
-
         const created = await addEmployee(employeeForm);
 
         setEmployees([
@@ -112,19 +107,18 @@ function Employee() {
           {
             ...employeeForm,
             id: created.id || Date.now(),
-            name: `${employeeForm.firstName} ${employeeForm.lastName}`
-          }
+            name: `${employeeForm.firstName} ${employeeForm.lastName}`,
+          },
         ]);
       }
 
       resetForm();
 
       const modal = window.bootstrap.Modal.getInstance(
-        document.getElementById("employeeModal")
+        document.getElementById("employeeModal"),
       );
 
       if (modal) modal.hide();
-
     } catch (error) {
       console.log(error);
     }
@@ -139,7 +133,6 @@ function Employee() {
   /* ================= EDIT ================= */
 
   const handleEdit = (employee) => {
-
     setEditingEmployee(employee);
 
     setEmployeeForm({
@@ -153,7 +146,7 @@ function Employee() {
       designation: employee.designation || "",
       roleId: employee.roleId || "",
       departmentId: employee.departmentId || "",
-      status: employee.status || ""
+      status: employee.status || "",
     });
 
     const modalElement = document.getElementById("employeeModal");
@@ -164,7 +157,6 @@ function Employee() {
   /* ================= DELETE ================= */
 
   const handleDelete = async (id) => {
-
     const result = await Swal.fire({
       title: "Delete Employee?",
       text: "Are you sure you want to delete this employee?",
@@ -173,22 +165,15 @@ function Employee() {
       confirmButtonColor: "#d33",
       cancelButtonColor: "#6c757d",
       confirmButtonText: "Delete",
-      cancelButtonText: "Cancel"
+      cancelButtonText: "Cancel",
     });
 
     if (result.isConfirmed) {
-
       await deleteEmployee(id);
 
-      setEmployees(
-        employees.filter(emp => emp.id !== id)
-      );
+      setEmployees(employees.filter((emp) => emp.id !== id));
 
-      Swal.fire(
-        "Deleted!",
-        "Employee has been deleted.",
-        "success"
-      );
+      Swal.fire("Deleted!", "Employee has been deleted.", "success");
     }
   };
 
@@ -196,7 +181,6 @@ function Employee() {
 
   return (
     <div>
-
       <div className="d-flex justify-content-between mb-3">
         <h2 style={{ color: "white" }}>Employee Management</h2>
 
@@ -218,42 +202,61 @@ function Employee() {
       <DataTable
         title="Employee List"
         data={employees}
-        columns={["Name", "Email",  "Designation", "Status"]}
-        fields={["name", "email","designation", "status"]}
+        columns={["Name", "Email", "Designation", "Status"]}
+        fields={["name", "email", "designation", "status"]}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         handleView={handleView}
       />
 
       <FormModal
-  modalId="employeeModal"
-  title="Add Employee"
-  formData={employeeForm}
-  setFormData={setEmployeeForm}
-  handleSubmit={handleSubmit}
-  tabs={[
-    {
-      key: "basic",
-      label: "Basic Info",
-      fields: [
-        { name: "firstName", type: "text", placeholder: "First Name" },
-        { name: "lastName", type: "text", placeholder: "Last Name" },
-        { name: "email", type: "email", placeholder: "Email", fullWidth: true },
-        { name: "password", type: "password", placeholder: "Password", fullWidth: true },
-        { name: "phone", type: "text", placeholder: "Phone", fullWidth: true }
-      ]
-    },
-    {
-      key: "work",
-      label: "Work Info",
-      fields: [
-        { name: "designation", type: "text", placeholder: "Designation" },
-        { name: "status", type: "select", options: ["ACTIVE", "INACTIVE"], fullWidth: true }
-      ]
-    }
-  ]}
-/>
-
+        modalId="employeeModal"
+        title="Add Employee"
+        formData={employeeForm}
+        setFormData={setEmployeeForm}
+        handleSubmit={handleSubmit}
+        tabs={[
+          {
+            key: "basic",
+            label: "Basic Info",
+            fields: [
+              { name: "firstName", type: "text", placeholder: "First Name" },
+              { name: "lastName", type: "text", placeholder: "Last Name" },
+              {
+                name: "email",
+                type: "email",
+                placeholder: "Email",
+                fullWidth: true,
+              },
+              {
+                name: "password",
+                type: "password",
+                placeholder: "Password",
+                fullWidth: true,
+              },
+              {
+                name: "phone",
+                type: "text",
+                placeholder: "Phone",
+                fullWidth: true,
+              },
+            ],
+          },
+          {
+            key: "work",
+            label: "Work Info",
+            fields: [
+              { name: "designation", type: "text", placeholder: "Designation" },
+              {
+                name: "status",
+                type: "select",
+                options: ["ACTIVE", "INACTIVE"],
+                fullWidth: true,
+              },
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

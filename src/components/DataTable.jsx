@@ -36,8 +36,10 @@ function DataTable({
 
     return data.filter((item) =>
       fields.some((f) =>
-        String(item[f] || "").toLowerCase().includes(q)
-      )
+        String(item[f] || "")
+          .toLowerCase()
+          .includes(q),
+      ),
     );
   }, [data, fields, searchQuery]);
 

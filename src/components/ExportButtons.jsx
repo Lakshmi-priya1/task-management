@@ -4,9 +4,7 @@ import autoTable from "jspdf-autotable";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 
 function ExportButtons({ data, columns, fileName }) {
-
   const downloadExcel = () => {
-
     const worksheet = XLSX.utils.json_to_sheet(data);
 
     const workbook = XLSX.utils.book_new();
@@ -16,27 +14,21 @@ function ExportButtons({ data, columns, fileName }) {
     XLSX.writeFile(workbook, `${fileName}.xlsx`);
   };
 
-
   const downloadPDF = () => {
-
     const doc = new jsPDF();
 
-    const rows = data.map(item =>
-      columns.map(col => item[col])
-    );
+    const rows = data.map((item) => columns.map((col) => item[col]));
 
     autoTable(doc, {
       head: [columns],
-      body: rows
+      body: rows,
     });
 
     doc.save(`${fileName}.pdf`);
   };
 
-
   return (
     <div className="btn-group">
-
       <button
         className="btn btn-success btn-sm me-2"
         onClick={downloadExcel}
@@ -52,7 +44,6 @@ function ExportButtons({ data, columns, fileName }) {
       >
         <FaFilePdf /> PDF
       </button>
-
     </div>
   );
 }

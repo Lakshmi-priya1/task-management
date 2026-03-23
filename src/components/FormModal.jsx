@@ -9,10 +9,7 @@ function FormModal({
   setFormData,
   handleSubmit,
 }) {
-
-  const [activeTab, setActiveTab] = useState(
-    tabs ? tabs[0].key : null
-  );
+  const [activeTab, setActiveTab] = useState(tabs ? tabs[0].key : null);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,7 +18,6 @@ function FormModal({
     });
   };
 
-  // 🔥 Reusable field renderer
   const renderFields = (fieldsList) => (
     <div className="form-grid">
       {fieldsList.map((field) =>
@@ -50,16 +46,17 @@ function FormModal({
             value={formData[field.name] || ""}
             onChange={handleChange}
           />
-        )
+        ),
       )}
     </div>
   );
 
   return (
     <div className="modal fade" id={modalId}>
-      <div className="modal-dialog"> {/* 🔥 wider */}
+      <div className="modal-dialog">
+        {" "}
+        {/* 🔥 wider */}
         <div className="modal-content">
-
           {/* HEADER */}
           <div className="modal-header">
             <h5 className="modal-title">{title}</h5>
@@ -72,7 +69,6 @@ function FormModal({
 
           {/* BODY */}
           <div className="modal-body">
-
             {/* 🔥 TABS MODE */}
             {tabs ? (
               <>
@@ -93,29 +89,22 @@ function FormModal({
                 {tabs.map(
                   (tab) =>
                     activeTab === tab.key && (
-                      <div key={tab.key}>
-                        {renderFields(tab.fields)}
-                      </div>
-                    )
+                      <div key={tab.key}>{renderFields(tab.fields)}</div>
+                    ),
                 )}
               </>
             ) : (
               // ✅ NORMAL MODE (Task modal stays same)
               renderFields(fields)
             )}
-
           </div>
 
           {/* FOOTER */}
           <div className="modal-footer">
-            <button
-              className="btn btn-primary w-100"
-              onClick={handleSubmit}
-            >
+            <button className="btn btn-primary w-100" onClick={handleSubmit}>
               Save
             </button>
           </div>
-
         </div>
       </div>
     </div>

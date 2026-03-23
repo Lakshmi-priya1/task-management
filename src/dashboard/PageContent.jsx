@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FaTasks, FaCheckCircle, FaHourglassHalf, FaList } from "react-icons/fa";
+import {
+  FaTasks,
+  FaCheckCircle,
+  FaHourglassHalf,
+  FaList,
+} from "react-icons/fa";
 
 import { getAllTasks } from "../services/taskService";
 
@@ -14,7 +19,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Legend
+  Legend,
 } from "recharts";
 
 function PageContent() {
@@ -22,31 +27,30 @@ function PageContent() {
 
   useEffect(() => {
     getAllTasks()
-      .then(data => {
+      .then((data) => {
         setTasks(Array.isArray(data) ? data : data.data || []);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
   }, []);
 
   const totalTasks = tasks.length;
 
-  const completed = tasks.filter(t => t.status === "COMPLETED").length;
+  const completed = tasks.filter((t) => t.status === "COMPLETED").length;
 
-  const pending = tasks.filter(t => t.status === "PENDING").length;
+  const pending = tasks.filter((t) => t.status === "PENDING").length;
 
-  const inProgress = tasks.filter(t => t.status === "IN_PROGRESS").length;
+  const inProgress = tasks.filter((t) => t.status === "IN_PROGRESS").length;
 
   const chartData = [
     { name: "Completed", value: completed },
     { name: "In Progress", value: inProgress },
-    { name: "Pending", value: pending }
+    { name: "Pending", value: pending },
   ];
 
   const COLORS = ["#22c55e", "#3b82f6", "#f59e0b"];
 
   return (
     <div className="container-fluid page-content">
-
       {/* WELCOME */}
       <div className="card shadow mb-4">
         <div className="card-body d-flex justify-content-between align-items-center">
@@ -62,7 +66,6 @@ function PageContent() {
 
       {/* 🔥 TASK STATS CARDS */}
       <div className="row mb-4">
-
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
             <FaList size={22} className="mb-2 text-dark" />
@@ -94,12 +97,10 @@ function PageContent() {
             <h3 className="text-warning">{pending}</h3>
           </div>
         </div>
-
       </div>
 
       {/* 📊 CHARTS */}
       <div className="row mb-4">
-
         {/* PIE CHART */}
         <div className="col-md-6">
           <div className="card shadow p-3">
@@ -144,12 +145,9 @@ function PageContent() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
