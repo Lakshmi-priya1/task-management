@@ -395,3 +395,33 @@
     transform: scale(1);
   }
 }
+.filter-btn {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.30); /* 👈 key change */
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+/* hover */
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* active (selected) */
+.filter-btn.active {
+  background: white;
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+/* click feel */
+.filter-btn:active {
+  transform: scale(0.97);
+}

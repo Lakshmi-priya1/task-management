@@ -26,6 +26,32 @@ export const getAllTasks = async () => {
   }
 };
 
+export const getTasksByStatus = async (status) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${ENDPOINTS.getTasksByStatus}/${status}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch tasks by status");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch by Status Error:", error);
+    throw error;
+  }
+};
+
 export const addTask = async (taskData) => {
   try {
     const token = localStorage.getItem("token");

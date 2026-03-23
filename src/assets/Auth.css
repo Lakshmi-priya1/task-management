@@ -3,7 +3,6 @@
 /* ======================
    Full Page Setup
 ====================== */
-
 html, body {
   height: 100%;
   margin: 0;
@@ -20,7 +19,6 @@ html, body {
   background: url("/src/assets/bg1.avif") no-repeat center center;
   background-size: cover;
   position: relative;
-  /* overflow removed so toast can float */
 }
 
 /* ======================
@@ -28,15 +26,15 @@ html, body {
 ====================== */
 .auth-image {
   flex: 1;
-  position: fixed;    /* stays visible while scrolling */
+  position: fixed;
   top: 0;
   left: 0;
-  width: 50%;         /* left half of the screen */
+  width: 50%;
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 0;         /* behind the form */
+  z-index: 0;
 }
 
 .auth-image img {
@@ -50,16 +48,16 @@ html, body {
 ====================== */
 .auth-form {
   flex: 1;
-  margin-left: 50%;       /* right of the fixed image */
+  margin-left: 50%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 60px;
-  color: white;
+  color: rgb(248, 248, 249);
   text-align: center;
-  position: relative;      /* not sticky, avoids stacking issues */
-  z-index: 1;              /* above image */
+  position: relative;
+  z-index: 1;
   background: transparent;
   border-radius: 0;
   box-shadow: none;
@@ -71,17 +69,46 @@ html, body {
 }
 
 /* ======================
-   Inputs
+   Inputs (Stronger Glass Effect)
 ====================== */
-.form-control {
+.auth-form .form-control {
   border-radius: 12px;
-  border: none;
-  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 12px;
+  background: rgba(255,255,255,0.35); /* stronger, more visible */
+  color: #060505;
+  backdrop-filter: blur(5px); /* subtle glass blur */
 }
 
-.form-control:focus {
+.auth-form .form-control::placeholder {
+  color: rgba(13, 5, 5, 0.9);
+}
+
+.auth-form .form-control:focus {
   outline: none;
-  box-shadow: 0 0 6px #8824cf;
+  box-shadow: 0 0 8px #8824cf;
+  background: rgba(255,255,255,0.45); /* slightly stronger on focus */
+}
+
+/* ======================
+   Password Toggle
+====================== */
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: rgb(6, 4, 4);
+  opacity: 0.8;
+}
+
+.password-toggle:hover {
+  opacity: 1;
 }
 
 /* ======================
@@ -127,10 +154,10 @@ html, body {
   transform: scale(1.2);
 }
 
-.social-btn:nth-child(1) { background: #4267B2; }
-.social-btn:nth-child(2) { background: #DB4437; }
-.social-btn:nth-child(3) { background: #1DA1F2; }
-.social-btn:nth-child(4) { background: #252424; }
+.social-btn:nth-child(1) { background: #DB4437; }
+.social-btn:nth-child(2) { background: #1DA1F2; }
+.social-btn:nth-child(3) { background: #252424; }
+
 
 /* ======================
    Remember Row
@@ -156,34 +183,9 @@ html, body {
   color: #8824cf;
 }
 
-/* Text spacing */
-.auth-form p {
-  margin-bottom: 20px;
-}
-
-.password-wrapper {
-  position: relative;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: #555;
-}
-
 /* ======================
-   Full-Screen Forgot Password Page
+   Full-Screen Forgot Password Page (Original Style Restored)
 ====================== */
-
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-}
-
 .forgot-page {
   display: flex;
   justify-content: center;
@@ -199,23 +201,22 @@ html, body {
   max-width: 400px;
   padding: 40px 20px;
   border-radius: 15px;
-  background: transparent; /* fully transparent */
-  color: white;
+  background: transparent; /* keep original */
+  color: rgb(255, 255, 255);
   text-align: center;
   box-shadow: none;
 }
 
-/* Inputs */
 .forgot-card .form-control {
   border-radius: 12px;
   border: none;
   padding: 12px;
-  background: rgba(255,255,255,0.1); /* optional: very slight see-through input */
-  color: white;
+  background: rgba(255,255,255,0.5); /* original slight transparent */
+  color: rgb(255, 255, 255);
 }
 
 .forgot-card .form-control::placeholder {
-  color: rgba(255,255,255,0.7);
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .forgot-card .form-control:focus {
@@ -224,7 +225,6 @@ html, body {
   background: rgba(255,255,255,0.15);
 }
 
-/* Buttons */
 .forgot-card .btn-primary {
   background: #8824cf;
   border: none;
@@ -240,7 +240,6 @@ html, body {
   transform: scale(1.05);
 }
 
-/* Links */
 .forgot-card a {
   color: white;
   text-decoration: none;
@@ -250,22 +249,34 @@ html, body {
   color: #8824cf;
 }
 
-/* Responsive for Mobile */
+/* ======================
+   Responsive for Mobile
+====================== */
 @media (max-width: 900px) {
+  .auth-form {
+    margin-left: 0;
+    padding: 30px 20px;
+  }
+
+  .auth-image {
+    display: none;
+  }
+
   .forgot-card {
     max-width: 90%;
     padding: 30px 20px;
   }
 }
+
 /* ======================
-   Toast Notifications (Auth pages)
+   Toast Notifications
 ====================== */
 .toast-message {
-  position: fixed;          /* float above everything */
-  top: 20px;                /* distance from top */
-  left: 50%;                /* horizontally centered */
+  position: fixed;
+  top: 20px;
+  left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;            /* ensure it's above form & image */
+  z-index: 9999;
   min-width: 260px;
   max-width: 90%;
   padding: 12px 20px;
@@ -277,7 +288,6 @@ html, body {
   animation: slideInDown 0.5s ease;
 }
 
-/* Slide-in animation for toast */
 @keyframes slideInDown {
   from {
     transform: translateX(-50%) translateY(-50px);

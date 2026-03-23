@@ -5,6 +5,7 @@ export const ENDPOINTS = {
   register: `${BASE_URL}/api/auth/register`,
   addTask: `${BASE_URL}/api/task/add`,
   getTasks: `${BASE_URL}/api/task/get`,
+  getTasksByStatus: `${BASE_URL}/api/task/get/view`,
   updateTask: `${BASE_URL}/api/task/update`,
   deleteTask: `${BASE_URL}/api/task/delete`, 
 };

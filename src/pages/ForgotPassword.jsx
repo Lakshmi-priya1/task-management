@@ -31,7 +31,7 @@ function ForgotPassword() {
     <div className="forgot-page">
       <div className="forgot-card">
         <h3 className="mb-3">Forgot Password</h3>
-        <p className="text-muted mb-4">
+        <p >
           Enter your email to receive a password reset link.
         </p>
 

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ToastMessage from "../components/ToastMessage";
-import { FaFacebookF, FaGoogle, FaTwitter, FaInstagram, FaEye, FaEyeSlash ,FaGithub} from "react-icons/fa";
+import { FaGoogle, FaTwitter, FaEye, FaEyeSlash ,FaGithub} from "react-icons/fa";
 import vector from "../assets/vector.jpg";
 import "../assets/Auth.css";
 import { loginUser } from "../services/authService";
@@ -73,13 +73,13 @@ function Login() {
           <h3 className="mb-4">Login</h3>
 
           <div className="social-icons">
-            <div className="social-btn"><FaFacebookF /></div>
+           
             <div className="social-btn"><FaGoogle /></div>
             <div className="social-btn"><FaTwitter /></div>
             <div className="social-btn"><FaGithub /></div>
           </div>
 
-          <p className="text-muted mb-3">or use your email</p>
+          <p >or use your email</p>
 
           <form onSubmit={handleLogin}>
             <input

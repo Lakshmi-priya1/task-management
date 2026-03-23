@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import ExportButtons from "../components/ExportButtons";
 import "./../assets/DataTable.css";
 
-// ✅ Date formatter inside DataTable
+// ✅ Date formatter
 const formatDate = (date) => {
   if (!date) return "";
 
@@ -23,10 +23,9 @@ function DataTable({
   handleView,
   fileName,
   rowsPerPageOptions = [5, 10, 20],
-  defaultRowsPerPage = 5
+  defaultRowsPerPage = 5,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortConfig, setSortConfig] = useState({ field: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
@@ -42,52 +41,18 @@ function DataTable({
     );
   }, [data, fields, searchQuery]);
 
-  // 🔽 Sort
-  const sortedData = useMemo(() => {
-    if (!sortConfig.field) return filteredData;
-
-    return [...filteredData].sort((a, b) => {
-      let aVal = a[sortConfig.field];
-      let bVal = b[sortConfig.field];
-
-      // ✅ Proper date sorting
-      if (sortConfig.field === "dueDate") {
-        aVal = new Date(aVal);
-        bVal = new Date(bVal);
-      }
-
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      return 0;
-    });
-  }, [filteredData, sortConfig]);
-
   // 📄 Pagination
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
-    return sortedData.slice(start, start + rowsPerPage);
-  }, [sortedData, currentPage, rowsPerPage]);
+    return filteredData.slice(start, start + rowsPerPage);
+  }, [filteredData, currentPage, rowsPerPage]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [searchQuery, rowsPerPage, data]);
-
-  const handleSort = (field) => {
-    const direction =
-      sortConfig.field === field && sortConfig.direction === "asc"
-        ? "desc"
-        : "asc";
-
-    setSortConfig({ field, direction });
-  };
-
-  const renderSortIcon = (field) => {
-    if (sortConfig.field !== field) return null;
-    return <span className={`sort-icon ${sortConfig.direction}`}></span>;
-  };
 
   return (
     <div className="datatable-card">
@@ -127,9 +92,7 @@ function DataTable({
             <tr>
               <th>Id</th>
               {columns.map((col, i) => (
-                <th key={i} onClick={() => handleSort(fields[i])}>
-                  {col} {renderSortIcon(fields[i])}
-                </th>
+                <th key={i}>{col}</th>
               ))}
               <th>Actions</th>
             </tr>
@@ -150,7 +113,7 @@ function DataTable({
                   {fields.map((field, i) => (
                     <td key={i}>
                       {field === "dueDate"
-                        ? formatDate(item[field]) // ✅ DATE FORMATTED HERE
+                        ? formatDate(item[field])
                         : item[field]}
                     </td>
                   ))}
