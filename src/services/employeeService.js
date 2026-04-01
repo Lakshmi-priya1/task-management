@@ -1,41 +1,99 @@
 import { ENDPOINTS } from "../api/apiConfig";
 
-export const getEmployees = async () => {
-  const res = await fetch(ENDPOINTS.users);
-  if (!res.ok) throw new Error("Failed to fetch employees");
-  return res.json();
+/* ================= COMMON HEADERS ================= */
+const getHeaders = () => {
+  const token = localStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
 };
 
-export const getEmployeeById = async (id) => {
-  const res = await fetch(`${ENDPOINTS.users}/${id}`);
-  if (!res.ok) throw new Error(`Failed to fetch employee with id ${id}`);
-  return res.json();
+/* ================= GET ALL (PAGINATION) ================= */
+export const getEmployees = async (page, size) => {
+  try {
+    const response = await fetch(
+      `${ENDPOINTS.getEmployees}?page=${page}&size=${size}`,
+      {
+        method: "GET",
+        headers: getHeaders(),
+      }
+    );
+
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    throw error;
+  }
 };
 
-export const addEmployee = async (employee) => {
-  const res = await fetch(ENDPOINTS.users, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(employee),
-  });
-  if (!res.ok) throw new Error("Failed to add employee");
-  return res.json();
-};
-
-export const updateEmployee = async (id, employee) => {
-  const res = await fetch(`${ENDPOINTS.users}/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(employee),
-  });
-  if (!res.ok) throw new Error("Failed to update employee");
-  return res.json();
-};
-
-export const deleteEmployee = async (id) => {
-  const res = await fetch(`${ENDPOINTS.users}/${id}`, {
-     method: "DELETE" 
+/* ================= ADD ================= */
+export const addEmployee = async (employeeData) => {
+  try {
+    const response = await fetch(ENDPOINTS.addEmployee, {
+      method: "POST",
+      headers: getHeaders(), 
+      body: JSON.stringify(employeeData),
     });
-  if (!res.ok) throw new Error("Failed to delete employee");
-  return true;
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Add Employee API error:", error);
+    throw error;
+  }
+};
+
+/* ================= UPDATE ================= */
+export const updateEmployee = async (employeeId, employeeData) => {
+  try {
+    const response = await fetch(
+      `${ENDPOINTS.updateEmployee}/${employeeId}`,
+      {
+        method: "PUT",
+        headers: getHeaders(), 
+        body: JSON.stringify(employeeData),
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Update Employee ${employeeId} error:`, error);
+    throw error;
+  }
+};
+
+/* ================= DELETE ================= */
+export const deleteEmployee = async (employeeId) => {
+  try {
+    const response = await fetch(
+      `${ENDPOINTS.deleteEmployee}/${employeeId}`,
+      {
+        method: "DELETE",
+        headers: getHeaders(), 
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(`Delete Employee ${employeeId} error:`, error);
+    throw error;
+  }
 };

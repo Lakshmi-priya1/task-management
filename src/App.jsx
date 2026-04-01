@@ -4,8 +4,10 @@ import Login from "./pages/Login";
 import PageContent from "./dashboard/PageContent";
 import Dashboard from "./dashboard/Dashboard";
 import Users from "./task/Users";
+;
 import Employee from "./employee/Employee";
-import EmployeeDetails from "./employee/EmployeeDetails";
+
+import Project from "./project/Project";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProtectedRoute from "./routes/ProtectedRoutes";
@@ -34,8 +36,10 @@ function App() {
          
           <Route index element={<PageContent />} />
           <Route path="users" element={<Users />} />
+         
           <Route path="employee" element={<Employee />} />
-          <Route path="employee/:id" element={<EmployeeDetails />} />
+          
+          <Route path="project" element={<Project />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
 

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { FaHome, FaUsers, FaTasks } from "react-icons/fa";
+import { FaHome, FaUsers, FaTasks, FaProjectDiagram } from "react-icons/fa";
 
 function Sidebar({ collapsed }) {
   return (
@@ -42,6 +42,19 @@ function Sidebar({ collapsed }) {
               {!collapsed && <span>Employees</span>}
             </NavLink>
           </li>
+
+          <li>
+            <NavLink
+              to="/dashboard/project"
+              className={({ isActive }) =>
+                `menu-item ${isActive ? "active" : ""}`
+              }
+            >
+              <FaProjectDiagram className="icon" />
+              {!collapsed && <span>Projects</span>}
+            </NavLink>
+          </li>
+
 
           <li>
             <NavLink

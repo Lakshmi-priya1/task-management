@@ -4,7 +4,7 @@ import ToastMessage from "../components/ToastMessage";
 import { FaFacebookF, FaGoogle, FaTwitter, FaInstagram } from "react-icons/fa";
 import vector from "../assets/vector.jpg";
 import "../assets/Register.css";
-import { registerUser } from "../services/authService"; // ✅ IMPORT ADDED
+import { registerUser } from "../services/authService"; 
 
 function Register() {
   const navigate = useNavigate();

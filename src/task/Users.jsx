@@ -1,181 +1,242 @@
-import { useState, useEffect } from "react";
-import ToastMessage from "../components/ToastMessage";
+import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { Modal } from "bootstrap";
+
+import DataTable from "../components/DataTable";
 import FormModal from "../components/FormModal";
 import BulkUpload from "../components/BulkUpload";
-import DataTable from "../components/DataTable";
-import Swal from "sweetalert2";
+import ViewDrawer from "../components/ViewDrawer"; // ✅ ADDED
 
 import {
   getAllTasks,
   addTask,
+  updateTask,
   deleteTask,
-  getTasksByStatus
+  getTasksByStatus,
 } from "../services/taskService";
+
+// TOAST
+const Toast = Swal.mixin({
+  toast: true,
+  position: "top-end",
+  showConfirmButton: false,
+  timer: 2500,
+  timerProgressBar: true,
+});
 
 function Users() {
   const [tasks, setTasks] = useState([]);
   const [editingTask, setEditingTask] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [newTask, setNewTask] = useState({
+  // 🔥 DRAWER STATE
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const [taskForm, setTaskForm] = useState({
     title: "",
     description: "",
     status: "PENDING",
     dueDate: "",
+    projectId: "",
+    milestoneId: "",
+    remarks: "",
+    assignedTo: "",
   });
 
-  // 🔔 Toast
-  const showToast = (message, type = "success") => {
-    setToastMessage({ message, type });
-    setTimeout(() => setToastMessage(null), 3000);
+  const [activeFilter, setActiveFilter] = useState("");
+
+  /* ================= CLEANUP MODAL ================= */
+  const cleanupModal = () => {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "auto";
+    document.body.style.paddingRight = "0";
+    document.documentElement.style.overflow = "auto";
   };
 
-  // 🚀 INITIAL LOAD
   useEffect(() => {
-    loadTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => cleanupModal();
   }, []);
 
-  // 📥 LOAD ALL TASKS
+  /* ================= FETCH ================= */
   const loadTasks = async () => {
     try {
-      const response = await getAllTasks();
-
-      if (Array.isArray(response)) {
-        setTasks(response);
-      } else if (response?.data) {
-        setTasks(response.data);
-      } else {
-        setTasks([]);
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      showToast("Failed to load tasks", "error");
+      setLoading(true);
+      const res = await getAllTasks();
+      setTasks(res?.data || []);
+    } catch {
+      setTasks([]);
+      Toast.fire({ icon: "error", title: "Failed to load tasks" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 🔍 FILTER TASKS
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  /* ================= FILTER ================= */
   const handleFilter = async (status) => {
     try {
+      setLoading(true);
       setActiveFilter(status);
 
-      let response;
-
       if (!status) {
-        response = await getAllTasks();
+        const res = await getAllTasks();
+        setTasks(res?.data || []);
       } else {
-        response = await getTasksByStatus(status);
+        const res = await getTasksByStatus(status);
+        setTasks(res?.data || []);
       }
-
-      // 🔥 IMPORTANT FIX
-      if (Array.isArray(response)) {
-        setTasks(response);
-      } else if (response?.data) {
-        setTasks(response.data);
-      } else {
-        setTasks([]);
-      }
-
-    } catch (error) {
-      console.error("Filter Error:", error);
-      showToast("Failed to filter tasks", "error");
+    } catch {
+      Toast.fire({ icon: "error", title: "Filter failed" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 🟢 OPEN MODAL
-  const openModal = () => {
-    const modalEl = document.getElementById("addTaskModal");
-    if (modalEl) {
-      const modal = new window.bootstrap.Modal(modalEl);
-      modal.show();
+  /* ================= VIEW (UPDATED) ================= */
+  const handleView = (id) => {
+    const task = tasks.find((t) => String(t.id) === String(id));
+
+    if (!task) {
+      return Toast.fire({
+        icon: "error",
+        title: "Task not found",
+      });
     }
+
+    setSelectedTask(task);
+    setViewOpen(true);
   };
 
-  // ➕ ADD TASK
-  const handleAddTask = async () => {
-    if (!newTask.title || !newTask.description || !newTask.dueDate) {
-      showToast("Please fill all required fields", "error");
-      return;
+  /* ================= EDIT ================= */
+  const handleEdit = (task) => {
+    setEditingTask(task);
+
+    setTaskForm({
+      ...task,
+      dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
+      assignedTo:
+        task.assignedTo?.id ||
+        task.assignedTo?.employeeId ||
+        task.assignedTo ||
+        "",
+    });
+
+    const modalEl = document.getElementById("taskModal");
+    const modal = Modal.getInstance(modalEl) || new Modal(modalEl);
+    modal.show();
+  };
+
+  /* ================= SUBMIT ================= */
+  const handleSubmitTask = async (e) => {
+    e.preventDefault();
+
+    if (!taskForm.title || !taskForm.description) {
+      return Toast.fire({
+        icon: "warning",
+        title: "Fill required fields",
+      });
     }
 
     try {
+      const payload = {
+        ...taskForm,
+        dueDate: taskForm.dueDate
+          ? `${taskForm.dueDate}T00:00:00`
+          : null,
+      };
+
       if (editingTask) {
-        showToast("Update API not connected yet", "error");
-        return;
+        await updateTask(editingTask.id, payload);
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === editingTask.id ? { ...t, ...payload } : t
+          )
+        );
+
+        Toast.fire({
+          icon: "success",
+          title: "Task updated successfully",
+        });
+      } else {
+        const newTask = await addTask(payload);
+        const taskObj = newTask?.data || newTask;
+
+        setTasks((prev) => [taskObj, ...prev]);
+
+        Toast.fire({
+          icon: "success",
+          title: "Task added successfully",
+        });
       }
 
-      await addTask(newTask);
-      await loadTasks();
+      const modalEl = document.getElementById("taskModal");
+      const modalInstance =
+        Modal.getInstance(modalEl) || new Modal(modalEl);
 
-      showToast("Task added successfully!", "success");
+      modalEl.addEventListener(
+        "hidden.bs.modal",
+        () => {
+          cleanupModal();
+          setEditingTask(null);
+          setTaskForm({
+            title: "",
+            description: "",
+            status: "PENDING",
+            dueDate: "",
+            projectId: "",
+            milestoneId: "",
+            remarks: "",
+            assignedTo: "",
+          });
+        },
+        { once: true }
+      );
 
-      setNewTask({
-        title: "",
-        description: "",
-        status: "PENDING",
-        dueDate: "",
-      });
-
-      const modalEl = document.getElementById("addTaskModal");
-      if (modalEl) {
-        const modalInstance = window.bootstrap.Modal.getInstance(modalEl);
-        if (modalInstance) modalInstance.hide();
-      }
-    // eslint-disable-next-line no-unused-vars
-    } catch (error) {
-      showToast("Failed to add task", "error");
+      modalInstance.hide();
+      setTimeout(() => cleanupModal(), 300);
+    } catch (err) {
+      console.error(err);
+      Toast.fire({ icon: "error", title: "Failed to save task" });
     }
   };
 
-  // ❌ DELETE
+  /* ================= DELETE ================= */
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Delete Task?",
-      text: "Are you sure you want to delete this task?",
+      text: "This action cannot be undone!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
-      cancelButtonColor: "#6c757d",
-      confirmButtonText: "Delete",
-      cancelButtonText: "Cancel"
     });
 
     if (result.isConfirmed) {
       try {
         await deleteTask(id);
+        setTasks((prev) => prev.filter((t) => t.id !== id));
 
-        setTasks(prev => prev.filter(task => task.id !== id));
-
-        showToast("Task deleted successfully!", "success");
-      // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        showToast("Failed to delete task", "error");
+        Toast.fire({
+          icon: "success",
+          title: "Task deleted successfully",
+        });
+      } catch {
+        Toast.fire({
+          icon: "error",
+          title: "Delete failed",
+        });
       }
     }
   };
 
-  // ✏️ EDIT
-  const handleEdit = (task) => {
-    setEditingTask(task);
-    setNewTask(task);
-    openModal();
-  };
-
-  // 🔄 RESET
-  const resetForm = () => {
-    setEditingTask(null);
-    setNewTask({
-      title: "",
-      description: "",
-      status: "PENDING",
-      dueDate: "",
-    });
-  };
-
+  /* ================= UI ================= */
   return (
     <div>
-      {/* HEADER */}
       <div className="d-flex justify-content-between mb-3">
         <h2 style={{ color: "white" }}>Task Management</h2>
 
@@ -184,73 +245,123 @@ function Users() {
 
           <button
             className="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#taskModal"
             onClick={() => {
-              resetForm();
-              openModal();
+              setEditingTask(null);
+              setTaskForm({
+                title: "",
+                description: "",
+                status: "PENDING",
+                dueDate: "",
+                projectId: "",
+                milestoneId: "",
+                remarks: "",
+                assignedTo: "",
+              });
             }}
           >
-            + Add Task
+            Add Task
           </button>
         </div>
       </div>
 
+      {/* FILTER */}
       <div className="mb-3 d-flex gap-2 flex-wrap">
-  {[
-    { label: "All", value: "" },
-    { label: "Pending", value: "PENDING" },
-    { label: "In Progress", value: "IN_PROGRESS" },
-    { label: "Completed", value: "COMPLETED" }
-  ].map((btn) => (
-    <button
-      key={btn.value}
-      onClick={() => handleFilter(btn.value)}
-      className={`filter-btn ${
-        activeFilter === btn.value ? "active" : ""
-      }`}
-    >
-      {btn.label}
-    </button>
-  ))}
-</div>
+        {["", "PENDING", "IN_PROGRESS", "COMPLETED"].map((s) => (
+          <button
+            key={s}
+            onClick={() => handleFilter(s)}
+            className={`filter-btn ${activeFilter === s ? "active" : ""}`}
+          >
+            {s || "All"}
+          </button>
+        ))}
+      </div>
 
-      {/* MODAL */}
+      <DataTable
+        title="Task List"
+        data={tasks}
+        columns={["Title", "Status", "Due Date"]}
+        fields={["title", "status", "dueDate"]}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        handleView={handleView}
+        loading={loading}
+      />
+
+      {/* 🔥 VIEW DRAWER */}
+      <ViewDrawer
+        isOpen={viewOpen}
+        onClose={() => setViewOpen(false)}
+        title="Task Details"
+        icon="bi-list-check"
+      
+        sections={
+          selectedTask
+            ? [
+                {
+                  heading: "Task Info",
+                  fields: [
+                    { label: "Title", value: selectedTask.title },
+                    { label: "Description", value: selectedTask.description },
+                    {
+                      label: "Status",
+                      value: selectedTask.status,
+                      badge: true,
+                    },
+                    {
+                      label: "Due Date",
+                      value: selectedTask.dueDate
+                        ? new Date(
+                            selectedTask.dueDate
+                          ).toLocaleDateString()
+                        : "N/A",
+                    },
+                  ],
+                },
+                {
+                  heading: "Assignment Info",
+                  fields: [
+                    {
+                      label: "Assigned To",
+                      value:
+                        selectedTask.assignedTo?.employeeId ||
+                        selectedTask.assignedTo ||
+                        "N/A",
+                    },
+                    { label: "Project ID", value: selectedTask.projectId },
+                    { label: "Milestone ID", value: selectedTask.milestoneId },
+                    { label: "Remarks", value: selectedTask.remarks },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
+
+      {/* FORM MODAL */}
       <FormModal
-        modalId="addTaskModal"
+        modalId="taskModal"
         title={editingTask ? "Edit Task" : "Add Task"}
-        formData={newTask}
-        setFormData={setNewTask}
-        handleSubmit={handleAddTask}
+        formData={taskForm}
+        setFormData={setTaskForm}
+        handleSubmit={handleSubmitTask}
         fields={[
-          { name: "title", type: "text", placeholder: "Enter Title", fullWidth: true },
-          { name: "description", type: "text", placeholder: "Enter Description", fullWidth: true },
+          { name: "title", type: "text", placeholder: "Title" },
+          { name: "description", type: "text", placeholder: "Description" },
           {
             name: "status",
             type: "select",
             options: ["PENDING", "IN_PROGRESS", "COMPLETED"],
           },
           { name: "dueDate", type: "date" },
+          { name: "assignedTo", type: "text", placeholder: "Employee ID" },
+          { name: "projectId", type: "text", placeholder: "Project ID" },
+          { name: "milestoneId", type: "text", placeholder: "Milestone ID" },
+          { name: "remarks", type: "text", placeholder: "Remarks" },
         ]}
       />
-
-      {/* TABLE */}
-      <DataTable
-        title="Task List"
-        data={tasks}
-        columns={["Title", "Description", "Status", "Due Date"]}
-        fields={["title", "description", "status", "dueDate"]}
-        handleEdit={handleEdit}
-        handleDelete={handleDelete}
-        fileName="tasks"
-      />
-
-      {/* TOAST */}
-      {toastMessage && (
-        <ToastMessage
-          id="taskToast"
-          message={toastMessage.message}
-          type={toastMessage.type}
-        />
-      )}
     </div>
   );
 }

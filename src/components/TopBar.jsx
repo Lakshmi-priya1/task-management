@@ -12,7 +12,7 @@ function Topbar({ toggleSidebar }) {
     setDropdownOpen(!dropdownOpen);
   };
 
-  // ✅ LOGOUT
+  // LOGOUT
   const handleLogout = () => {
     setDropdownOpen(false);
     localStorage.clear();
@@ -23,7 +23,7 @@ function Topbar({ toggleSidebar }) {
     setDropdownOpen(false);
   };
 
-  // ✅ GET USERNAME FROM TOKEN
+  // GET USERNAME FROM TOKEN
   useEffect(() => {
     try {
       const token = localStorage.getItem("token");
@@ -72,7 +72,7 @@ function Topbar({ toggleSidebar }) {
       {/* USER DROPDOWN */}
       <div className="dropdown" ref={dropdownRef}>
         <button className="profile-btn" onClick={toggleDropdown}>
-          {/* 🔥 Avatar */}
+          {/* Avatar */}
           <div className="avatar-circle">{username.charAt(0)}</div>
 
           {/* Text */}
@@ -80,7 +80,7 @@ function Topbar({ toggleSidebar }) {
             Welcome, <span className="username">{username}</span>
           </span>
 
-          {/* 🔽 Arrow */}
+          {/*Arrow */}
           <span className={`arrow ${dropdownOpen ? "open" : ""}`}>▼</span>
         </button>
 

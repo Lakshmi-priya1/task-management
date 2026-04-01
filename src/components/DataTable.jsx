@@ -1,11 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import ExportButtons from "../components/ExportButtons";
 import "./../assets/DataTable.css";
 
-// ✅ Date formatter
 const formatDate = (date) => {
   if (!date) return "";
-
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -13,27 +11,61 @@ const formatDate = (date) => {
   });
 };
 
+const renderStatusBadge = (status) => {
+  const s = status?.toUpperCase();
+  const style = {
+    padding: "4px 10px",
+    borderRadius: "12px",
+    fontWeight: "600",
+    fontSize: "0.85rem",
+    display: "inline-block",
+    minWidth: "70px",
+    textAlign: "center",
+    color: "#fff",
+  };
+
+  switch (s) {
+    case "ACTIVE":
+      return (
+        <span style={{ ...style, backgroundColor: "#28a745" }}>Active</span>
+      );
+    case "INACTIVE":
+      return (
+        <span style={{ ...style, backgroundColor: "#dc3545" }}>Inactive</span>
+      );
+    default:
+      return <span style={{ ...style, backgroundColor: "#6c757d" }}>N/A</span>;
+  }
+};
+
 function DataTable({
   title,
   data,
   columns,
   fields,
+  idField = "id",
   handleEdit,
   handleDelete,
   handleView,
   fileName,
+  currentPage = 0,
+  totalPages = 1,
+  onPageChange = () => {},
+  rowsPerPage = 5,
+  onRowsChange = () => {},
   rowsPerPageOptions = [5, 10, 20],
-  defaultRowsPerPage = 5,
+  isEmployeeTable = false,
+  loading = false,
 }) {
+  data = data || [];
+  fields = fields || [];
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
-  // 🔍 Filter
   const filteredData = useMemo(() => {
+    if (!data.length) return [];
     if (!searchQuery) return data;
-    const q = searchQuery.toLowerCase();
 
+    const q = searchQuery.toLowerCase();
     return data.filter((item) =>
       fields.some((f) =>
         String(item[f] || "")
@@ -43,28 +75,13 @@ function DataTable({
     );
   }, [data, fields, searchQuery]);
 
-  // 📄 Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return filteredData.slice(start, start + rowsPerPage);
-  }, [filteredData, currentPage, rowsPerPage]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCurrentPage(1);
-  }, [searchQuery, rowsPerPage, data]);
-
   return (
     <div className="datatable-card">
-      {/* Header */}
       <div className="datatable-header">
         <h4>{title}</h4>
         <ExportButtons data={data} columns={fields} fileName={fileName} />
       </div>
 
-      {/* Controls */}
       <div className="datatable-controls">
         <input
           type="text"
@@ -77,7 +94,7 @@ function DataTable({
         <select
           className="datatable-rows"
           value={rowsPerPage}
-          onChange={(e) => setRowsPerPage(Number(e.target.value))}
+          onChange={(e) => onRowsChange(Number(e.target.value))}
         >
           {rowsPerPageOptions.map((opt) => (
             <option key={opt} value={opt}>
@@ -87,12 +104,11 @@ function DataTable({
         </select>
       </div>
 
-      {/* Table */}
       <div className="datatable-table-wrapper">
-        <table className="datatable-table">
+        <table className={`datatable-table ${loading ? "loading" : ""}`}>
           <thead>
             <tr>
-              <th>Id</th>
+              <th>ID</th>
               {columns.map((col, i) => (
                 <th key={i}>{col}</th>
               ))}
@@ -101,64 +117,59 @@ function DataTable({
           </thead>
 
           <tbody>
-            {paginatedData.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length + 2} className="text-center">
-                  No data available
-                </td>
+            {loading && data.length === 0 ? (
+              Array.from({ length: rowsPerPage }).map((_, i) => (
+                <tr key={i}>
+                  <td colSpan={columns.length + 2}>
+                    <div className="skeleton-row"></div>
+                  </td>
+                </tr>
+              ))
+            ) : filteredData.length === 0 ? (
+              <tr className="no-data-row">
+                <td colSpan={columns.length + 2}>No data available</td>
               </tr>
             ) : (
-              paginatedData.map((item, idx) => (
-                <tr key={item.id} className="datatable-row">
-                  <td>{(currentPage - 1) * rowsPerPage + idx + 1}</td>
+              filteredData.map((item, index) => (
+                <tr key={item[idField] || index} className="datatable-row">
+                  <td>{currentPage * rowsPerPage + index + 1}</td>
 
                   {fields.map((field, i) => (
                     <td key={i}>
                       {field === "dueDate"
                         ? formatDate(item[field])
-                        : item[field]}
+                        : field === "status" && isEmployeeTable
+                          ? renderStatusBadge(item[field])
+                          : item[field] || "N/A"}
                     </td>
                   ))}
 
-                  <td className="datatable-actions">
-                    {handleView && (
+                  <td>
+                    <div className="datatable-actions">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleView(item.id);
-                        }}
+                        onClick={() => handleView?.(item[idField])}
                         className="btn-action btn-view"
                         title="View"
                       >
                         <i className="bi bi-eye"></i>
                       </button>
-                    )}
 
-                    {handleEdit && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(item);
-                        }}
+                        onClick={() => handleEdit?.(item)}
                         className="btn-action btn-edit"
                         title="Edit"
                       >
                         <i className="bi bi-pencil"></i>
                       </button>
-                    )}
 
-                    {handleDelete && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id);
-                        }}
+                        onClick={() => handleDelete?.(item[idField])}
                         className="btn-action btn-delete"
                         title="Delete"
                       >
                         <i className="bi bi-trash"></i>
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -167,11 +178,10 @@ function DataTable({
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="datatable-pagination">
         <button
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
+          disabled={currentPage === 0}
+          onClick={() => onPageChange(currentPage - 1)}
         >
           Prev
         </button>
@@ -179,16 +189,16 @@ function DataTable({
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
-            className={currentPage === i + 1 ? "active" : ""}
-            onClick={() => setCurrentPage(i + 1)}
+            className={currentPage === i ? "active" : ""}
+            onClick={() => onPageChange(i)}
           >
             {i + 1}
           </button>
         ))}
 
         <button
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage((p) => p + 1)}
+          disabled={currentPage === totalPages - 1}
+          onClick={() => onPageChange(currentPage + 1)}
         >
           Next
         </button>

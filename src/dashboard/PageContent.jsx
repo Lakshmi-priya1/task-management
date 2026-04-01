@@ -64,7 +64,7 @@ function PageContent() {
         </div>
       </div>
 
-      {/* 🔥 TASK STATS CARDS */}
+      {/* TASK STATS CARDS */}
       <div className="row mb-4">
         <div className="col-md-3">
           <div className="card shadow text-center p-3">
@@ -99,7 +99,7 @@ function PageContent() {
         </div>
       </div>
 
-      {/* 📊 CHARTS */}
+      {/* CHARTS */}
       <div className="row mb-4">
         {/* PIE CHART */}
         <div className="col-md-6">

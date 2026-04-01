@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "../api/apiConfig";
 
-// 🔐 LOGIN
+// LOGIN
 export const loginUser = async (loginData) => {
   const response = await fetch(ENDPOINTS.login, {
     method: "POST",
@@ -16,17 +16,17 @@ export const loginUser = async (loginData) => {
 
   const data = await response.json();
 
-  // 🔥 STORE TOKEN (VERY IMPORTANT)
+  // STORE TOKEN (VERY IMPORTANT)
   if (data.token) {
     localStorage.setItem("token", data.token);
   } else {
     console.warn("⚠️ No token received from backend");
-  }
+  }  
 
   return data;
 };
 
-// 📝 REGISTER
+// REGISTER
 export const registerUser = async (registerData) => {
   const response = await fetch(ENDPOINTS.register, {
     method: "POST",

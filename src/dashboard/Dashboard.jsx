@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/TopBar";
-import bgImage from "../assets/bg1.avif"; // keep your image in src/assets
+import bgImage from "../assets/bg1.avif"; 
 
 function Dashboard() {
   const [collapsed, setCollapsed] = useState(false);
