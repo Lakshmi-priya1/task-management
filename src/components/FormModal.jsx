@@ -1,159 +1,134 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import ReactDOM from "react-dom";
 import "./../assets/FormModel.css";
-
+ 
 function FormModal({
-  modalId,
+  isOpen,
+  handleClose,
   title,
-  fields = [],
-  tabs = null,
+  tabs = [],       
+  fields = [],     
   formData,
   setFormData,
   handleSubmit,
 }) {
-  const [activeTab, setActiveTab] = useState(tabs ? tabs[0].key : null);
-
-  useEffect(() => {
-    const modalEl = document.getElementById(modalId);
-
-    if (modalEl) {
-      const handleOpen = () => {
-        if (tabs && tabs.length > 0) {
-          setActiveTab(tabs[0].key);
-        }
-      };
-
-      modalEl.addEventListener("show.bs.modal", handleOpen);
-
-      return () => {
-        modalEl.removeEventListener("show.bs.modal", handleOpen);
-      };
-    }
-  }, [modalId, tabs]);
-
-  const formatLabel = (name) => {
-    return name
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase());
-  };
-
+  const hasTabs = tabs.length > 0;
+  const [activeTab, setActiveTab] = useState(tabs[0]?.key || "");
+ 
+  // Always call hooks before any early return
+  if (!isOpen) return null;
+ 
   const handleChange = (e) => {
-    let value = e.target.value;
-
-    if (e.target.name === "employeeIds" || e.target.name === "milestones") {
-      value = value.replace(/\s*,\s*/g, ", ");
-    }
-
-    setFormData({
-      ...formData,
-      [e.target.name]: value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  const renderFields = (fieldsList) => (
-    <div className="form-grid">
-      {fieldsList.map((field) => (
-        <div
-          key={field.name}
-          className={`form-group ${
-            field.fullWidth ? "full-width" : ""
-          }`}
-        >
-          <div className="floating-group input-with-icon">
-            
-            
-
-            {/* INPUT / SELECT */}
-            {field.type === "select" ? (
-              <select
-                name={field.name}
-                className="form-control custom-input"
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                required
-              >
-                <option value=""></option>
-                {(field.options || []).map((opt, index) => (
-                  <option key={index} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={field.type}
-                name={field.name}
-                className="form-control custom-input"
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                required
-                placeholder=" "
-              />
-            )}
-
-            {/* FLOAT LABEL */}
-            <label>{field.placeholder || formatLabel(field.name)}</label>
-          </div>
+ 
+  const renderField = (field) => {
+    if (field.type === "select") {
+      return (
+        <div key={field.name} className="form-group mb-3">
+          <label className="form-label fw-semibold">
+            {field.label || field.name}
+          </label>
+          <select
+            className="form-select"
+            name={field.name}
+            value={formData[field.name] || ""}
+            onChange={handleChange}
+          >
+            <option value="">Select</option>
+            {field.options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
         </div>
-      ))}
-    </div>
-  );
-
-  return (
-    <div className="modal fade custom-modal" id={modalId}>
-      <div className="modal-dialog modal-lg modal-dialog-centered">
+      );
+    }
+ 
+    return (
+      <div key={field.name} className="form-group mb-3">
+        <label className="form-label fw-semibold">
+          {field.label || field.name}
+        </label>
+        <input
+          className="form-control"
+          type={field.type || "text"}
+          name={field.name}
+          placeholder={field.placeholder || ""}
+          value={formData[field.name] || ""}
+          onChange={handleChange}
+        />
+      </div>
+    );
+  };
+ 
+  const modalContent = (
+    <>
+      {/* Backdrop */}
+      <div className="custom-backdrop" onClick={handleClose} />
+ 
+      {/* Modal box */}
+      <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
-
-          {/* HEADER */}
-          <div className="modal-header custom-header">
-            <h5 className="modal-title">{title}</h5>
-            <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          {/* BODY */}
-          <div className="modal-body">
-            {tabs ? (
-              <>
-                <ul className="nav nav-tabs custom-tabs mb-3">
-                  {tabs.map((tab) => (
-                    <li className="nav-item" key={tab.key}>
-                      <button
-                        type="button"
-                        className={`nav-link ${activeTab === tab.key ? "active" : ""}`}
-                        onClick={() => setActiveTab(tab.key)}
-                      >
-                        {tab.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {tabs.map(
-                  (tab) =>
-                    activeTab === tab.key && (
-                      <div key={tab.key}>{renderFields(tab.fields)}</div>
-                    )
-                )}
-              </>
-            ) : (
-              renderFields(fields)
-            )}
-          </div>
-
-          {/* FOOTER */}
-          <div className="modal-footer custom-footer">
-            <button className="btn btn-secondary" data-bs-dismiss="modal">
-              Cancel
-            </button>
-
-            <button className="btn btn-primary custom-save-btn" onClick={handleSubmit}>
-              Save
+ 
+          {/* Header */}
+          <div className="custom-header">
+            <span>{title}</span>
+            <button className="close" onClick={handleClose}>
+              ×
             </button>
           </div>
-
+ 
+          {/* Tabs (only in tabbed mode) */}
+          {hasTabs && (
+            <ul className="custom-tabs nav nav-pills px-3 pt-2">
+              {tabs.map((tab) => (
+                <li key={tab.key} className="nav-item">
+                  <button
+                    type="button"
+                    className={`nav-link ${activeTab === tab.key ? "active" : ""}`}
+                    onClick={() => setActiveTab(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+ 
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid px-3 pt-3">
+              {hasTabs
+                ? tabs
+                    .filter((tab) => tab.key === activeTab)
+                    .flatMap((tab) => tab.fields.map(renderField))
+                : fields.map(renderField)}
+            </div>
+ 
+            <div className="custom-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleClose}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn custom-save-btn">
+                Submit
+              </button>
+            </div>
+          </form>
+ 
         </div>
       </div>
-    </div>
+    </>
   );
+ 
+  // Portal renders outside Dashboard stacking context — always on top
+  return ReactDOM.createPortal(modalContent, document.body);
 }
-
+ 
 export default FormModal;

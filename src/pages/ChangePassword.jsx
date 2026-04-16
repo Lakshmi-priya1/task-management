@@ -25,10 +25,22 @@ function ChangePassword() {
     alert("Password changed successfully!");
   };
 
+  const handleBack = () => {
+    window.history.back(); // Go back to previous page
+  };
+
   return (
     <div className="change-password-container">
       <div className="card shadow change-password-card">
         <div className="card-body">
+          {/* Back Button */}
+          <button
+            className="btn btn-secondary mb-3"
+            onClick={handleBack}
+          >
+            &larr; Back
+          </button>
+
           <h3 className="text-center mb-4">Change Password</h3>
 
           <form onSubmit={handleSubmit}>

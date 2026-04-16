@@ -1,0 +1,211 @@
+/* ================= SIDEBAR CONTAINER ================= */
+.sidebar {
+height: 100vh;
+width: 250px;
+
+background: linear-gradient(180deg, #ede9fe, #ddd6fe);
+color: #2b333f;
+
+position: fixed;
+top: 0;
+left: 0;
+
+display: flex;
+flex-direction: column;
+
+border-right: 1px solid #e0e7ff;
+
+padding: 10px;
+
+/* Enhancements */
+backdrop-filter: blur(6px);
+-webkit-backdrop-filter: blur(6px);
+box-shadow: 4px 0 20px rgba(124, 58, 237, 0.15);
+
+transition: width 0.3s ease, padding 0.3s ease;
+}
+
+/* Gradient border */
+.sidebar::after {
+content: "";
+position: absolute;
+top: 0;
+right: 0;
+width: 1px;
+height: 100%;
+background: linear-gradient(
+180deg,
+rgba(124,58,237,0.4),
+rgba(124,58,237,0.1)
+);
+}
+
+/* ================= CONTENT ================= */
+.sidebar-content {
+display: flex;
+flex-direction: column;
+height: 100%;
+overflow-y: auto;
+}
+
+/* ================= LOGO ================= */
+.logo {
+font-size: 18px;
+font-weight: 700;
+color: #5b21b6;
+
+padding: 12px 10px;
+margin-bottom: 20px;
+}
+
+/* ================= MENU ================= */
+.menu {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+
+/* Section title */
+.menu-title {
+font-size: 11px;
+color: #1f2226;
+margin: 14px 10px 6px;
+letter-spacing: 1px;
+}
+
+/* ================= MENU ITEM ================= */
+.menu-item {
+display: flex;
+align-items: center;
+gap: 12px;
+
+padding: 10px 12px;
+margin: 4px 0;
+
+border-radius: 10px;
+text-decoration: none;
+
+color: #374151;
+font-size: 14px;
+
+position: relative;
+overflow: hidden;
+
+transition: all 0.25s ease;
+}
+
+/* Icon */
+.menu-item .icon {
+font-size: 16px;
+min-width: 20px;
+color: #7c3aed;
+transition: transform 0.2s ease;
+}
+
+/* Icon hover animation */
+.menu-item:hover .icon {
+transform: scale(1.15);
+}
+
+/* Shimmer hover effect */
+.menu-item::after {
+content: "";
+position: absolute;
+inset: 0;
+border-radius: 10px;
+background: linear-gradient(
+120deg,
+transparent,
+rgba(124,58,237,0.2),
+transparent
+);
+opacity: 0;
+transition: opacity 0.3s;
+}
+
+.menu-item:hover::after {
+opacity: 1;
+}
+
+/* Hover */
+.menu-item:hover {
+background: rgba(124,58,237,0.12);
+color: #4c1d95;
+transform: translateX(3px);
+}
+
+.menu-item:hover .icon {
+color: #4c1d95;
+}
+
+/* ================= ACTIVE ================= */
+.menu-item.active {
+background: rgba(124,58,237,0.18);
+color: #3a196c;
+font-weight: 600;
+
+/* Glow */
+box-shadow: 0 4px 12px rgba(124,58,237,0.25);
+}
+
+/* Left indicator */
+.menu-item.active::before {
+content: "";
+position: absolute;
+left: -10px;
+top: 8px;
+height: 70%;
+width: 4px;
+border-radius: 4px;
+background: #7c3aed;
+
+transition: all 0.3s ease;
+}
+
+/* ================= COLLAPSED ================= */
+.sidebar[style*="80px"] {
+width: 80px;
+}
+
+/* Center icons */
+.sidebar[style*="80px"] .menu-item {
+justify-content: center;
+}
+
+/* Hide text smoothly */
+.menu-item span {
+transition: opacity 0.2s ease;
+}
+
+.sidebar[style*="80px"] .menu-item span {
+opacity: 0;
+display: none;
+}
+
+.sidebar[style*="80px"] .menu-title {
+display: none;
+}
+
+/* Center logo */
+.sidebar[style*="80px"] .logo {
+text-align: center;
+}
+
+/* ================= SCROLL ================= */
+.sidebar-content::-webkit-scrollbar {
+width: 4px;
+}
+
+/* Gradient scrollbar */
+.sidebar-content::-webkit-scrollbar-thumb {
+background: linear-gradient(180deg, #c084fc, #a855f7);
+border-radius: 10px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+.sidebar {
+position: absolute;
+z-index: 999;
+}
+}

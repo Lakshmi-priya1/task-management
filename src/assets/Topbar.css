@@ -1,93 +1,167 @@
-/* Layout */
+/* ================= TOPBAR LAYOUT ================= */
 .topbar-container {
-  background-color: var(--purple-100);
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+padding: 12px 18px;
+
+display: flex;
+justify-content: space-between;
+align-items: center;
+
+backdrop-filter: blur(8px);
+border-bottom: 1px solid #e5e7eb;
 }
 
-/* Sidebar button */
+/* ================= SIDEBAR TOGGLE BUTTON ================= */
 .toggle-btn {
-  border: 1px solid var(--purple-700);
-  color: var(--purple-700);
-  background: transparent;
-  padding: 5px 10px;
-  border-radius: 6px;
+border: 1px solid #7c3aed;
+color: #7c3aed;
+background: transparent;
+padding: 6px 12px;
+border-radius: 8px;
+cursor: pointer;
+
+transition: all 0.2s ease;
 }
 
-/* Profile Button */
+.toggle-btn:hover {
+background: #ede9fe;
+transform: translateY(-1px);
+}
+
+.toggle-btn:active {
+transform: scale(0.96);
+}
+
+/* ================= PROFILE BUTTON ================= */
 .profile-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+display: flex;
+align-items: center;
+gap: 10px;
 
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 30px;
+background: #fff;
+border: 1px solid #e5e7eb;
+border-radius: 999px;
 
-  padding: 6px 14px;
-  cursor: pointer;
+padding: 6px 14px;
+cursor: pointer;
 
-  transition: all 0.3s ease;
+transition: all 0.25s ease;
+animation: fadeIn 0.4s ease;
 }
 
 .profile-btn:hover {
-  background: #f9fafb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+background: #faf5ff;
+box-shadow: 0 4px 12px rgba(124,58,237,0.15);
+transform: translateY(-1px);
 }
 
-/* Avatar */
+/* ================= AVATAR ================= */
 .avatar-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+width: 34px;
+height: 34px;
+border-radius: 50%;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 
-  color: #fff;
-  font-weight: bold;
+color: #fff;
+font-weight: 600;
+font-size: 13px;
 
-  background: linear-gradient(135deg, #6a11cb, #2575fc);
+background: linear-gradient(135deg, #7c3aed, #4f46e5);
+box-shadow: 0 2px 6px rgba(124,58,237,0.4);
 }
 
-/* Welcome text */
+/* ================= TEXT ================= */
 .welcome-text {
-  font-size: 14px;
+font-size: 13px;
+color: #6b7280;
 }
 
 .username {
-  font-weight: 600;
-  text-transform: capitalize;
+font-weight: 600;
+color: #111827;
+text-transform: capitalize;
 }
 
-/* Arrow animation */
+/* ================= ARROW ================= */
 .arrow {
-  font-size: 12px;
-  transition: transform 0.3s ease;
+font-size: 12px;
+transition: transform 0.25s ease;
+color: #6b7280;
 }
 
 .arrow.open {
-  transform: rotate(180deg);
+transform: rotate(180deg);
 }
 
-/* Dropdown animation */
+/* ================= DROPDOWN ================= */
 .dropdown-menu {
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
+position: absolute;
+right: 0;
+top: 110%;
 
-  display: block;
-  visibility: hidden;
-  pointer-events: none;
+opacity: 0;
+transform: translateY(-8px) scale(0.98);
+transition: all 0.25s ease;
+
+display: block;
+visibility: hidden;
+pointer-events: none;
+
+background: #fff;
+border-radius: 12px;
+border: 1px solid #e5e7eb;
+box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+padding: 8px;
+min-width: 160px;
+z-index: 100;
 }
 
 .dropdown-menu.show {
-  opacity: 1;
-  transform: translateY(0);
+opacity: 1;
+transform: translateY(0) scale(1);
 
-  visibility: visible;
-  pointer-events: auto;
+visibility: visible;
+pointer-events: auto;
+}
+
+/* ================= DROPDOWN ITEMS ================= */
+.dropdown-item {
+padding: 8px 12px;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+color: #111827;
+transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+background: #f3e8ff;
+}
+
+/* ================= DIVIDER ================= */
+.dropdown-divider {
+height: 1px;
+background: #e5e7eb;
+margin: 6px 0;
+}
+
+/* ================= ACCESSIBILITY ================= */
+button:focus {
+outline: 2px solid #7c3aed;
+outline-offset: 2px;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes fadeIn {
+from {
+opacity: 0;
+transform: translateY(-5px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
 }

@@ -24,24 +24,21 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setForm({
       ...form,
       [name]: type === "checkbox" ? checked : value,
     });
 
-    // Clear individual field error while typing
-    setErrors({ ...errors, [name]: "" });
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Toggle password visibility
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    setShowPassword((prev) => !prev);
   };
 
-  // SweetAlert2 Toast
   const showToast = (message, type = "success") => {
     Swal.fire({
       toast: true,
@@ -49,12 +46,20 @@ function Login() {
       icon: type,
       title: message,
       showConfirmButton: false,
-      timer: 3000,
+      timer: 2500,
       timerProgressBar: true,
     });
   };
 
-  // Validate form fields
+  const cleanupSwal = () => {
+    Swal.close();
+    Swal.hideLoading?.();
+
+    document.querySelectorAll(".swal2-container").forEach((el) => el.remove());
+    document.body.style.overflow = "auto";
+    document.body.style.pointerEvents = "auto";
+  };
+
   const validateForm = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,15 +68,13 @@ function Login() {
     else if (!emailRegex.test(form.email)) newErrors.email = "Invalid email";
 
     if (!form.password) newErrors.password = "Password is required";
-    else if (form.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
+    else if (form.password.length < 5)
+      newErrors.password = "Password must be at least 5 characters";
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -87,17 +90,24 @@ function Login() {
       });
 
       const token =
-        response.token ||
-        response.accessToken ||
-        response.jwt ||
-        response.data?.token;
+        response?.token ||
+        response?.accessToken ||
+        response?.jwt ||
+        response?.data?.token;
 
       if (token) localStorage.setItem("token", token);
 
+      cleanupSwal();
+
       showToast("Logged in successfully", "success");
-      setTimeout(() => navigate("/dashboard"), 1000);
+
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 300);
+
     // eslint-disable-next-line no-unused-vars
     } catch (error) {
+      cleanupSwal();
       showToast("Invalid email or password", "error");
     }
   };
@@ -113,23 +123,15 @@ function Login() {
       <div className="auth-form">
         <h3 className="mb-4">Login</h3>
 
-        {/* Social login buttons */}
         <div className="social-icons">
-          <div className="social-btn">
-            <FaGoogle />
-          </div>
-          <div className="social-btn">
-            <FaTwitter />
-          </div>
-          <div className="social-btn">
-            <FaGithub />
-          </div>
+          <div className="social-btn"><FaGoogle /></div>
+          <div className="social-btn"><FaTwitter /></div>
+          <div className="social-btn"><FaGithub /></div>
         </div>
 
         <p>or use your email</p>
 
         <form onSubmit={handleLogin}>
-          {/* Email input */}
           <input
             type="email"
             name="email"
@@ -138,10 +140,15 @@ function Login() {
             value={form.email}
             onChange={handleChange}
           />
-          {errors.email && <small className="text-danger">{errors.email}</small>}
+          {errors.email && (
+            <small className="text-danger">{errors.email}</small>
+          )}
 
-          {/* Password input */}
-          <div className={`password-wrapper mb-1 ${errors.password ? "is-invalid" : ""}`}>
+          <div
+            className={`password-wrapper mb-1 ${
+              errors.password ? "is-invalid" : ""
+            }`}
+          >
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -150,13 +157,18 @@ function Login() {
               value={form.password}
               onChange={handleChange}
             />
-            <span className="password-toggle" onClick={togglePasswordVisibility}>
+            <span
+              className="password-toggle"
+              onClick={togglePasswordVisibility}
+            >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-          {errors.password && <small className="text-danger">{errors.password}</small>}
 
-          {/* Remember & Forgot */}
+          {errors.password && (
+            <small className="text-danger">{errors.password}</small>
+          )}
+
           <div className="remember-row">
             <label>
               <input
@@ -171,7 +183,9 @@ function Login() {
             <Link to="/forgot-password">Forgot Password?</Link>
           </div>
 
-          <button className="btn btn-primary w-100 mt-3">Login</button>
+          <button className="btn btn-primary w-100 mt-3">
+            Login
+          </button>
         </form>
       </div>
     </div>

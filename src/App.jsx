@@ -1,13 +1,10 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
-
 import Login from "./pages/Login";
 import PageContent from "./dashboard/PageContent";
 import Dashboard from "./dashboard/Dashboard";
-import Users from "./task/Users";
-;
-import Employee from "./employee/Employee";
+import Users from "./pages/Users";
+import Employee from "./pages/Employee";
 
-import Project from "./project/Project";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProtectedRoute from "./routes/ProtectedRoutes";
@@ -19,33 +16,22 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-
-        {/* PUBLIC ROUTES */}
         <Route path="/" element={<Login />} />
-       
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
         <Route
           path="/dashboard"
           element={
            // <ProtectedRoute>
               <Dashboard />
             // </ProtectedRoute>
-          }
-        >
-         
+          } >
           <Route index element={<PageContent />} />
           <Route path="users" element={<Users />} />
-         
           <Route path="employee" element={<Employee />} />
-          
-          <Route path="project" element={<Project />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
-
       </Routes>
     </HashRouter>
   );
 }
-
 export default App;

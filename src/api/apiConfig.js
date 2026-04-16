@@ -1,20 +1,18 @@
-export const BASE_URL = "https://cq11cmqs-8082.inc1.devtunnels.ms";
+export const BASE_URL = "http://localhost:8080";
 
 export const ENDPOINTS = {
-  login: `${BASE_URL}/api/auth/login`,
-  register: `${BASE_URL}/api/auth/register`,
+  login: `${BASE_URL}/admin/login`,
   
-  addTask: `${BASE_URL}/api/task/add`,
-  getTasks: `${BASE_URL}/api/task/get`,
-  getTaskById: `${BASE_URL}/api/task/get`,
-  getTasksByStatus: `${BASE_URL}/api/task/get/view`,
-  updateTask: `${BASE_URL}/api/task/update`,
-  deleteTask: `${BASE_URL}/api/task/delete`, 
+  addTask: `${BASE_URL}/tasks/add`,
+  getAllTasks: `${BASE_URL}/tasks/all`,
+  getTaskById: (id) => `${BASE_URL}/tasks/all/${id}`,
+  updateTask: (id) => `${BASE_URL}/tasks/update/${id}`,
+  deleteTask: (id) => `${BASE_URL}/tasks/delete/${id}`,
 
-  addEmployee:`${BASE_URL}/api/employee/add`,
-  getEmployees: `${BASE_URL}/api/employee/get`,
-  updateEmployee: `${BASE_URL}/api/employee/update`,
-  deleteEmployee: `${BASE_URL}/api/employee/hard-delete`,
+  addEmployee: `${BASE_URL}/employees/add`,
+  getAllEmployees: `${BASE_URL}/employees/all`,
+  getEmployeeById: (id) => `${BASE_URL}/employees/all/${id}`,
+  updateEmployee: (id) => `${BASE_URL}/employees/update/${id}`,
+  deleteEmployee: (id) => `${BASE_URL}/employees/delete/${id}`,
+}
 
-  
-};
