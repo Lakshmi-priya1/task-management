@@ -1,9 +1,34 @@
-import React, { useRef } from "react";
-import ExportButtons from "../components/ExportButtons";
-import "./../assets/DataTable.css";
+import React from "react";
+import {
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Stack,
+  Pagination,
+  CircularProgress,
+  Tooltip,
+  IconButton,
+  Typography,
+} from "@mui/material";
+
+import {
+  Visibility,
+  Edit,
+  Delete,
+  InboxRounded,
+  PersonAddRounded,
+  PersonRemoveRounded,
+} from "@mui/icons-material";
+
+/* ================= HELPERS ================= */
 
 const formatDate = (date) => {
-  if (!date) return "";
+  if (!date) return "-";
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -11,38 +36,96 @@ const formatDate = (date) => {
   });
 };
 
-const renderStatusBadge = (status) => {
+const getStatusChip = (status) => {
   const s = status?.toUpperCase();
 
-  const style = {
-    padding: "4px 10px",
-    borderRadius: "12px",
-    fontWeight: "600",
-    fontSize: "0.85rem",
-    display: "inline-block",
-    minWidth: "70px",
-    textAlign: "center",
-    color: "#fff",
+  const styles = {
+    ACTIVE: {
+    label: "Active",
+    bg: "#dcfce7",
+    color: "#15803d", // green
+  },
+
+  INACTIVE: {
+    label: "Inactive",
+    bg: "#fdefef",
+    color: "#dc2626", 
+  },
+
+  PENDING: {
+    label: "Pending",
+    bg: "#fef3c7",
+    color: "#b45309", // amber
+  },
+
+  IN_PROGRESS: {
+    label: "In Progress",
+    bg: "#dbeafe",
+    color: "#1d4ed8", // blue
+  },
+
+  COMPLETED: {
+    label: "Completed",
+    bg: "#dcfce7",
+    color: "#16a34a", // green (success)
+  },
+
+  // 🚀 PRIORITY (fully contrasting, no purple repetition)
+
+  LOW: {
+    label: "Low",
+    bg: "#ecfeff",
+    color: "#0891b2", // cyan
+  },
+
+  MEDIUM: {
+    label: "Medium",
+    bg: "#fef9c3",
+    color: "#ca8a04", // yellow/amber
+  },
+
+  HIGH: {
+    label: "High",
+    bg: "#fee2e2",
+    color: "#dc2626", // red
+  },
   };
 
-  switch (s) {
-    case "ACTIVE":
-      return <span style={{ ...style, backgroundColor: "#28a745" }}>Active</span>;
-    case "INACTIVE":
-      return <span style={{ ...style, backgroundColor: "#dc3545" }}>Inactive</span>;
-    case "PENDING":
-      return <span style={{ ...style, backgroundColor: "#f59e0b" }}>Pending</span>;
-    case "IN_PROGRESS":
-      return <span style={{ ...style, backgroundColor: "#3b82f6" }}>In Progress</span>;
-    case "COMPLETED":
-      return <span style={{ ...style, backgroundColor: "#22c55e" }}>Completed</span>;
-    default:
-      return <span style={{ ...style, backgroundColor: "#6c757d" }}>N/A</span>;
-  }
+  const style = styles[s] || { label: status || "N/A", bg: "#f1f5f9", color: "#64748b" };
+
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.5,
+        py: 0.4,
+        borderRadius: "999px",
+        backgroundColor: style.bg,
+        color: style.color,
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: 0.3,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <Box
+        sx={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          backgroundColor: style.color,
+        }}
+      />
+      {style.label}
+    </Box>
+  );
 };
 
+/* ================= COMPONENT ================= */
+
 function DataTable({
-  title,
   data = [],
   columns = [],
   fields = [],
@@ -50,192 +133,263 @@ function DataTable({
   handleEdit,
   handleDelete,
   handleView,
-  fileName,
-  isEmployeeTable = false,
-
-  // loading
+  extraActions = [],
   loading = false,
-
-  loadMore,
-  hasMore,
   page = 0,
   totalPages = 1,
+  pageSize = 5,
   onPageChange,
 }) {
-  const observer = useRef();
-
-  const lastRowRef = (node) => {
-    if (!loadMore) return;
-    if (loading) return;
-
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMore();
-      }
-    });
-
-    if (node) observer.current.observe(node);
-  };
-
   return (
-    <div className="datatable-card">
-      <div className="datatable-header">
-        <h4>{title}</h4>
-        <ExportButtons data={data} columns={fields} fileName={fileName} />
-      </div>
-      <div className="datatable-table-wrapper">
-        <table className={`datatable-table ${loading ? "loading" : ""}`}>
-          <thead>
-            <tr>
-              <th>Id</th>
-              {columns.map((col, i) => (
-                <th key={i}>{col}</th>
-              ))}
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading && data.length === 0 ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
-                  <td colSpan={columns.length + 2}>
-                    <div className="skeleton-row"></div>
-                  </td>
-                </tr>
-              ))
-            ) : data.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length + 2} className="text-center">
-                  No data available
-                </td>
-              </tr>
-            ) : (
-              data.map((item, index) => {
-                const isLast = index === data.length - 1;
-
-                return (
-                  <tr
-                    key={item[idField] || index}
-                    ref={isLast ? lastRowRef : null}
-                    className="datatable-row"
-                  >
-                    <td>{index + 1}</td>
-
-                    {fields.map((field, i) => (
-                      <td key={i}>
-                        {field === "dueDate"
-                          ? formatDate(item[field])
-                          : field === "status" && isEmployeeTable
-                          ? renderStatusBadge(item[field])
-                          : field === "status"
-                          ? renderStatusBadge(item[field])
-                          : item[field] || "N/A"}
-                      </td>
-                    ))}
-
-                    <td>
-                      <div className="datatable-actions">
-                        <button
-                          onClick={() => handleView?.(item[idField])}
-                          className="btn-action btn-view"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
-
-                        <button
-                          onClick={() => handleEdit?.(item)}
-                          className="btn-action btn-edit"
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete?.(item[idField])}
-                          className="btn-action btn-delete"
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ================= PAGINATION UI (NEW) ================= */}
-      {onPageChange && (
-        <div className="pagination-container">
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 0}
-          >
-            Prev
-          </button>
-
-      <div className="page-numbers">
-
-  {/* First page */}
-  <button
-    onClick={() => onPageChange(0)}
-    className={page === 0 ? "page-number active" : "page-number"}
-  >
-    1
-  </button>
-
-  {/* Left dots */}
-  {page > 3 && <span className="dots">...</span>}
-
-  {/* Middle pages */}
-  {Array.from({ length: totalPages }, (_, i) => i)
-    .slice(
-      Math.max(1, page - 1),
-      Math.min(totalPages - 1, page + 2)
-    )
-    .map((num) => (
-      <button
-        key={num}
-        onClick={() => onPageChange(num)}
-        className={`page-number ${page === num ? "active" : ""}`}
+    <Box>
+      {/* TABLE CONTAINER */}
+      <TableContainer
+        sx={{
+          borderRadius: "0 0 20px 20px",
+          overflow: "hidden",
+        }}
       >
-        {num + 1}
-      </button>
-    ))}
+        <Table>
+          {/* HEAD */}
+          <TableHead>
+            <TableRow>
+              <TableCell
+                sx={{
+                  background: "#f8f7ff",
+                  fontWeight: 800,
+                  fontSize: "0.75rem",
+                  color: "#6366f1",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  borderBottom: "2px solid #ede9fe",
+                  py: 2,
+                }}
+              >
+                Id
+              </TableCell>
 
-  {/* Right dots */}
-  {page < totalPages - 4 && <span className="dots">...</span>}
+              {columns.map((col, i) => (
+                <TableCell
+                  key={i}
+                  sx={{
+                    background: "#f8f7ff",
+                    fontWeight: 800,
+                    fontSize: "0.75rem",
+                    color: "#6366f1",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    borderBottom: "2px solid #ede9fe",
+                    py: 2,
+                  }}
+                >
+                  {col}
+                </TableCell>
+              ))}
 
-  {/* Last page */}
-  {totalPages > 1 && (
-    <button
-      onClick={() => onPageChange(totalPages - 1)}
-      className={page === totalPages - 1 ? "page-number active" : "page-number"}
-    >
-      {totalPages}
-    </button>
-  )}
+              <TableCell
+                align="center"
+                sx={{
+                  background: "#f8f7ff",
+                  fontWeight: 800,
+                  fontSize: "0.75rem",
+                  color: "#6366f1",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  borderBottom: "2px solid #ede9fe",
+                  py: 2,
+                }}
+              >
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHead>
 
-</div>
+          {/* BODY */}
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + 2}
+                  align="center"
+                  sx={{ py: 8, border: "none" }}
+                >
+                  <CircularProgress
+                    size={32}
+                    sx={{ color: "#6366f1" }}
+                  />
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + 2}
+                  align="center"
+                  sx={{ py: 8, border: "none" }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 1,
+                      color: "#cbd5e1",
+                    }}
+                  >
+                    <InboxRounded sx={{ fontSize: 48 }} />
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#94a3b8",
+                      }}
+                    >
+                      No records found
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((item, index) => (
+                <TableRow
+                  key={index}
+                  sx={{
+                    cursor: "pointer",
+                    transition: "all 0.18s ease",
+                    backgroundColor: "#fff",
 
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page + 1 >= totalPages}
-          >
-            Next
-          </button>
-        </div>
+                    /* Row hover highlight */
+                    "&:hover": {
+                      backgroundColor: "#f5f3ff",
+                      transform: "scale(1.002)",
+                      boxShadow: "0 2px 12px rgba(99,102,241,0.08)",
+                      "& td": {
+                        borderColor: "transparent",
+                      },
+                    },
+
+                    /* Rounded corners on first/last cell */
+                    "& td:first-of-type": {
+                      borderRadius: "12px 0 0 12px",
+                    },
+                    "& td:last-of-type": {
+                      borderRadius: "0 12px 12px 0",
+                    },
+
+                    "& td": {
+                      borderBottom: "1px solid #f1f5f9",
+                      py: 1.8,
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                    },
+                  }}
+                >
+                  {/* SERIAL NO */}
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: "#94a3b8 !important",
+                      fontSize: "0.8rem !important",
+                      minWidth: 40,
+                    }}
+                  >
+                    {String(page * pageSize + index + 1).padStart(2, "0")}
+                  </TableCell>
+
+                  {/* DATA CELLS */}
+                  {fields.map((field, i) => (
+                    <TableCell key={i}>
+                      {field === "dueDate" || field === "startDate" || field === "endDate"
+                        ? formatDate(item[field])
+                        : field === "status"
+                        ? getStatusChip(item[field])
+                        : (
+                          <Typography
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: field === fields[0] ? 700 : 400,
+                              color: field === fields[0] ? "#1e293b" : "#475569",
+                            }}
+                          >
+                            {item[field] || "-"}
+                          </Typography>
+                        )}
+                    </TableCell>
+                  ))}
+
+                  {/* ACTIONS */}
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      <Tooltip title="View" arrow>
+                        <IconButton size="small" onClick={() => handleView?.(item[idField])}
+                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#2563eb", backgroundColor: "rgba(37,99,235,0.07)", "&:hover": { backgroundColor: "rgba(37,99,235,0.15)" } }}>
+                          <Visibility sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Edit" arrow>
+                        <IconButton size="small" onClick={() => handleEdit?.(item)}
+                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#7c3aed", backgroundColor: "rgba(124,58,237,0.07)", "&:hover": { backgroundColor: "rgba(124,58,237,0.15)" } }}>
+                          <Edit sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Delete" arrow>
+                        <IconButton size="small" onClick={() => handleDelete?.(item[idField])}
+                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#ef4444", backgroundColor: "rgba(239,68,68,0.07)", "&:hover": { backgroundColor: "rgba(239,68,68,0.15)" } }}>
+                          <Delete sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      {extraActions.map((action, ai) => (
+                        <Tooltip key={ai} title={action.label} arrow>
+                          <IconButton size="small" onClick={() => action.onClick(item[idField], item)}
+                            sx={{ width: 32, height: 32, borderRadius: "10px", color: action.color || "#0891b2", backgroundColor: action.bg || "rgba(8,145,178,0.07)", "&:hover": { backgroundColor: action.bg || "rgba(8,145,178,0.15)" } }}>
+                            {action.icon || <PersonAddRounded sx={{ fontSize: 16 }} />}
+                          </IconButton>
+                        </Tooltip>
+                      ))}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* PAGINATION */}
+      {onPageChange && (
+        <Box
+          sx={{
+            py: 2.5,
+            px: 3,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            borderTop: "1px solid #f1f5f9",
+          }}
+        >
+          <Pagination
+            count={totalPages}
+            page={page + 1}
+            onChange={(e, value) => onPageChange(value - 1)}
+            shape="rounded"
+            sx={{
+              "& .MuiPaginationItem-root": {
+                borderRadius: "10px",
+                fontWeight: 700,
+                fontSize: 13,
+                color: "#64748b",
+              },
+              "& .Mui-selected": {
+                backgroundColor: "#6366f1 !important",
+                color: "#fff !important",
+              },
+            }}
+          />
+        </Box>
       )}
-
-      {/* infinite scroll loading */}
-      {loadMore && loading && data.length > 0 && (
-        <div className="text-center p-2">Loading more...</div>
-      )}
-    </div>
+    </Box>
   );
 }
 

@@ -1,116 +1,142 @@
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import "../assets/Topbar.css";
+import {
+  Box, IconButton, Typography, Avatar, Menu, MenuItem, Divider, Tooltip,
+} from "@mui/material";
+import {
+  MenuRounded, NotificationsNoneRounded, KeyboardArrowDownRounded,
+  LockOutlined, LogoutOutlined, FullscreenRounded, FullscreenExitRounded,
+  DarkModeRounded, LightModeRounded,
+} from "@mui/icons-material";
+import { ColorModeContext } from "../App";
 
-function Topbar({ toggleSidebar }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [username, setUsername] = useState("User");
-  const dropdownRef = useRef(null);
+export default function Topbar({ toggleSidebar }) {
+  const navigate = useNavigate();
+  const { toggleColorMode, mode } = useContext(ColorModeContext);
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [profileName, setProfileName] = useState("Admin");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const open = Boolean(anchorEl);
 
-  // LOGOUT
-  const handleLogout = () => {
-    setDropdownOpen(false);
-    localStorage.clear();
-    window.location.href = "/";
-  };
-
-  const closeDropdown = () => {
-    setDropdownOpen(false);
-  };
-
-  // GET USERNAME FROM TOKEN
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token || token === "undefined" || token === "null") {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setUsername("User");
-        return;
-      }
-
-      const decoded = jwtDecode(token);
-
-      const rawName =
-        decoded?.username || decoded?.email || decoded?.sub || "User";
-
-      const nameOnly = rawName.includes("@") ? rawName.split("@")[0] : rawName;
-
-      const formattedName =
-        nameOnly.charAt(0).toUpperCase() + nameOnly.slice(1);
-
-      setUsername(formattedName);
-    } catch (error) {
-      console.error("Token decode error:", error);
-      setUsername("User");
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.sub) {
+          const name = decoded.sub.split("@")[0];
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setProfileName(name.charAt(0).toUpperCase() + name.slice(1));
+        }
+      } catch { /* invalid token */ }
     }
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const isDark = mode === "dark";
+
+  const iconBtnSx = {
+    width: 40, height: 40, borderRadius: "12px",
+    background: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+    color: isDark ? "#c4b5fd" : "#7c3aed",
+    "&:hover": { background: isDark ? "rgba(255,255,255,0.15)" : "rgba(139,92,246,0.15)" },
+  };
 
   return (
-    <div className="topbar-container shadow-sm">
-      {/* Sidebar Toggle */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        ☰
-      </button>
+    <Box sx={{
+      height: 68,
+      px: 3,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      position: "sticky",
+      top: 0,
+      zIndex: 1200,
+      backdropFilter: "blur(14px)",
+      background: isDark ? "rgba(15,15,30,0.75)" : "rgba(255,255,255,0.45)",
+      borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.35)",
+    }}>
+      {/* LEFT */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Tooltip title="Toggle Sidebar">
+          <IconButton onClick={toggleSidebar} sx={iconBtnSx}>
+            <MenuRounded />
+          </IconButton>
+        </Tooltip>
+        <Typography sx={{ fontWeight: 800, fontSize: 17, color: isDark ? "#e0e7ff" : "#312e81" }}>
+          Taskify
+        </Typography>
+      </Box>
 
-      {/* USER DROPDOWN */}
-      <div className="dropdown" ref={dropdownRef}>
-        <button className="profile-btn" onClick={toggleDropdown}>
-          {/* Avatar */}
-          <div className="avatar-circle">{username.charAt(0)}</div>
+      {/* RIGHT */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 
-          {/* Text */}
-          <span className="welcome-text">
-            Welcome, <span className="username">{username}</span>
-          </span>
+        {/* FULLSCREEN */}
+        <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
+          <IconButton onClick={toggleFullscreen} sx={iconBtnSx}>
+            {isFullscreen ? <FullscreenExitRounded /> : <FullscreenRounded />}
+          </IconButton>
+        </Tooltip>
 
-          {/*Arrow */}
-          <span className={`arrow ${dropdownOpen ? "open" : ""}`}>▼</span>
-        </button>
+        <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
+          <IconButton onClick={toggleColorMode} sx={iconBtnSx}>
+            {isDark ? <LightModeRounded /> : <DarkModeRounded />}
+          </IconButton>
+        </Tooltip>
 
-        <ul className={`dropdown-menu ${dropdownOpen ? "show" : ""}`}>
-          <li>
-            <Link
-              className="dropdown-item"
-              to="/dashboard/change-password"
-              onClick={closeDropdown}
-            >
-              Change Password
-            </Link>
-          </li>
+        {/* NOTIFICATIONS */}
+        <Tooltip title="Notifications">
+          <IconButton sx={iconBtnSx}>
+            <NotificationsNoneRounded />
+          </IconButton>
+        </Tooltip>
 
-          <li>
-            <hr className="dropdown-divider" />
-          </li>
+        {/* PROFILE */}
+        <Box onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 0.5,
+            borderRadius: "999px", cursor: "pointer",
+            background: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.72)",
+            "&:hover": { background: isDark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.9)" },
+          }}>
+          <Avatar sx={{ width: 34, height: 34, background: "linear-gradient(135deg,#8b5cf6,#a855f7)", fontSize: 14, fontWeight: 700 }}>
+            {profileName.charAt(0).toUpperCase()}
+          </Avatar>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: isDark ? "#e0e7ff" : "#111827" }}>
+            {profileName}
+          </Typography>
+          <KeyboardArrowDownRounded sx={{ fontSize: 18, color: isDark ? "#a78bfa" : "#6b7280" }} />
+        </Box>
 
-          <li>
-            <button
-              className="dropdown-item text-danger"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
+        {/* MENU */}
+        <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}
+          PaperProps={{ sx: { mt: 1.5, borderRadius: "16px", minWidth: 200, boxShadow: "0 18px 35px rgba(0,0,0,.12)" } }}>
+          <MenuItem onClick={() => { setAnchorEl(null); navigate("/dashboard/change-password"); }}>
+            <LockOutlined sx={{ mr: 1.5, fontSize: 18, color: "#6366f1" }} />
+            Change Password
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={() => { setAnchorEl(null); localStorage.removeItem("token"); navigate("/"); }} sx={{ color: "#ef4444" }}>
+            <LogoutOutlined sx={{ mr: 1.5, fontSize: 18 }} />
+            Logout
+          </MenuItem>
+        </Menu>
+      </Box>
+    </Box>
   );
 }
-
-export default Topbar;

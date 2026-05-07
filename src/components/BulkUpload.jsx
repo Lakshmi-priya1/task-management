@@ -1,4 +1,6 @@
 import * as XLSX from "xlsx";
+import { Button } from '@mui/material';
+import { CloudUpload } from '@mui/icons-material';
 
 function BulkUpload({ setTasks }) {
   const handleFileUpload = (event) => {
@@ -33,15 +35,20 @@ function BulkUpload({ setTasks }) {
   };
 
   return (
-    <label className="btn btn-secondary">
-      <i className="bi bi-upload me-1"></i> Bulk Upload
+    <Button
+      variant="contained"
+      color="secondary"
+      component="label"
+      startIcon={<CloudUpload />}
+    >
+      Bulk Upload
       <input
         type="file"
         accept=".xlsx,.xls,.csv,.pdf,.jpg,.png,.svg"
         hidden
         onChange={handleFileUpload}
       />
-    </label>
+    </Button>
   );
 }
 

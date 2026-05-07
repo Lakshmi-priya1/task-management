@@ -1,45 +1,32 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
+import { Box } from "@mui/material";
+import Sidebar from "../components/SideBar";
 import Topbar from "../components/TopBar";
-import bgImage from "../assets/bg1.avif"; 
 
-function Dashboard() {
+export default function Dashboard() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
-      {/* Sidebar */}
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar collapsed={collapsed} />
 
-      {/* Main Content */}
-      <div
-        className="flex-grow-1 dashboard-main"
-        style={{
-          marginLeft: collapsed ? "80px" : "250px",
-          transition: "all 0.3s ease",
-          position: "relative",
+      <Box
+        sx={{
+          flexGrow: 1,
+          ml: collapsed ? "80px" : "260px",
+          transition: "0.3s ease",
           minHeight: "100vh",
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
+          background:
+            "linear-gradient(135deg,#ede9fe 0%,#ddd6fe 40%,#c4b5fd 100%)",
         }}
       >
-        {/* Topbar */}
         <Topbar toggleSidebar={() => setCollapsed(!collapsed)} />
 
-        {/* Page content */}
-        <div className="dashboard-page p-4">
-          {/* Optional overlay */}
-          <div className="dashboard-overlay"></div>
-
-          {/* Actual content */}
+        <Box sx={{ p: 3 }}>
           <Outlet />
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
-
-export default Dashboard;

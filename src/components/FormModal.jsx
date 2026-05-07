@@ -1,134 +1,209 @@
-import { useState } from "react";
-import ReactDOM from "react-dom";
-import "./../assets/FormModel.css";
- 
-function FormModal({
+import { useState, useEffect } from "react";
+
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Tabs,
+  Tab,
+  Box,
+  Checkbox,
+  ListItemText,
+  IconButton,
+  Typography,
+  Chip,
+  Stack,
+} from "@mui/material";
+
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+export default function FormModal({
   isOpen,
   handleClose,
   title,
-  tabs = [],       
-  fields = [],     
+  tabs = [],
+  fields = [],
   formData,
   setFormData,
   handleSubmit,
 }) {
   const hasTabs = tabs.length > 0;
-  const [activeTab, setActiveTab] = useState(tabs[0]?.key || "");
- 
-  // Always call hooks before any early return
-  if (!isOpen) return null;
- 
+  const [activeTab, setActiveTab] = useState("");
+
+  // ================= SAFE TAB HANDLING =================
+  useEffect(() => {
+    if (isOpen && hasTabs && !activeTab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(tabs[0]?.key || "");
+    }
+
+    if (!isOpen) {
+      setActiveTab("");
+    }
+  }, [isOpen, hasTabs, tabs, activeTab]);
+
+  // ================= SAFE CHANGE =================
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
- 
+
+  // ================= FIELD RENDER =================
   const renderField = (field) => {
-    if (field.type === "select") {
+    const value = formData?.[field.name];
+
+    // ================= MULTISELECT =================
+    if (field.type === "multiselect") {
       return (
-        <div key={field.name} className="form-group mb-3">
-          <label className="form-label fw-semibold">
-            {field.label || field.name}
-          </label>
-          <select
-            className="form-select"
+        <FormControl fullWidth key={field.name} margin="normal">
+          <InputLabel>{field.label || field.name}</InputLabel>
+
+          <Select
+            multiple
             name={field.name}
-            value={formData[field.name] || ""}
+            value={Array.isArray(value) ? value : []}
             onChange={handleChange}
+            label={field.label || field.name}
+            renderValue={(selected) =>
+              (field.options || [])
+                .filter((item) => selected.includes(item.value))
+                .map((item) => item.label)
+                .join(", ")
+            }
           >
-            <option value="">Select</option>
-            {field.options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
+            {(field.options || []).map((item, index) => (
+              <MenuItem
+                key={item.value ?? index}
+                value={item.value}
+              >
+                <Checkbox checked={(value || []).includes(item.value)} />
+                <ListItemText primary={item.label} />
+              </MenuItem>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormControl>
       );
     }
- 
+
+    // ================= SELECT =================
+    if (field.type === "select") {
+      return (
+        <FormControl fullWidth key={field.name} margin="normal">
+          <InputLabel>{field.label || field.name}</InputLabel>
+
+          <Select
+            name={field.name}
+            value={value ?? ""}
+            onChange={handleChange}
+            label={field.label || field.name}
+            disabled={field.disabled}
+          >
+            {(field.options || []).map((item, index) => {
+              // SUPPORT BOTH STRING + OBJECT OPTIONS
+              const isObject = typeof item === "object";
+
+              return (
+                <MenuItem
+                  key={isObject ? item.value : item ?? index}
+                  value={isObject ? item.value : item}
+                >
+                  {isObject ? item.label : item}
+                </MenuItem>
+              );
+            })}
+          </Select>
+        </FormControl>
+      );
+    }
+
+    // ================= CUSTOM CONTENT =================
+    if (field.type === "custom") {
+      return <Box key={field.name}>{field.render?.()}</Box>;
+    }
+
+    // ================= TEXT FIELD =================
     return (
-      <div key={field.name} className="form-group mb-3">
-        <label className="form-label fw-semibold">
-          {field.label || field.name}
-        </label>
-        <input
-          className="form-control"
-          type={field.type || "text"}
-          name={field.name}
-          placeholder={field.placeholder || ""}
-          value={formData[field.name] || ""}
-          onChange={handleChange}
-        />
-      </div>
+      <TextField
+        fullWidth
+        margin="normal"
+        key={field.name}
+        label={field.label || field.name}
+        type={field.type || "text"}
+        name={field.name}
+        value={value ?? ""}
+        onChange={handleChange}
+      />
     );
   };
- 
-  const modalContent = (
-    <>
-      {/* Backdrop */}
-      <div className="custom-backdrop" onClick={handleClose} />
- 
-      {/* Modal box */}
-      <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
- 
-          {/* Header */}
-          <div className="custom-header">
-            <span>{title}</span>
-            <button className="close" onClick={handleClose}>
-              ×
-            </button>
-          </div>
- 
-          {/* Tabs (only in tabbed mode) */}
-          {hasTabs && (
-            <ul className="custom-tabs nav nav-pills px-3 pt-2">
-              {tabs.map((tab) => (
-                <li key={tab.key} className="nav-item">
-                  <button
-                    type="button"
-                    className={`nav-link ${activeTab === tab.key ? "active" : ""}`}
-                    onClick={() => setActiveTab(tab.key)}
-                  >
-                    {tab.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
- 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid px-3 pt-3">
-              {hasTabs
-                ? tabs
-                    .filter((tab) => tab.key === activeTab)
-                    .flatMap((tab) => tab.fields.map(renderField))
-                : fields.map(renderField)}
-            </div>
- 
-            <div className="custom-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleClose}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn custom-save-btn">
-                Submit
-              </button>
-            </div>
-          </form>
- 
-        </div>
-      </div>
-    </>
+
+  const activeFields = hasTabs
+    ? tabs.find((tab) => tab.key === activeTab)?.fields || []
+    : fields;
+
+  const currentTabIndex = hasTabs
+    ? Math.max(
+        tabs.findIndex((tab) => tab.key === activeTab),
+        0
+      )
+    : 0;
+
+  return (
+    <Dialog open={isOpen} onClose={handleClose} fullWidth maxWidth="md">
+      <DialogTitle>
+        {title}
+
+        <IconButton
+          onClick={handleClose}
+          sx={{
+            position: "absolute",
+            right: 10,
+            top: 10,
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent>
+        {/* ================= TABS ================= */}
+        {hasTabs && (
+          <Tabs
+            value={currentTabIndex}
+            onChange={(e, value) =>
+              setActiveTab(tabs[value]?.key || "")
+            }
+          >
+            {tabs.map((tab) => (
+              <Tab key={tab.key} label={tab.label} />
+            ))}
+          </Tabs>
+        )}
+
+        {/* ================= FIELDS ================= */}
+        <Box mt={2}>
+          {activeFields.map(renderField)}
+        </Box>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+
+        <Button variant="contained" onClick={handleSubmit}>
+          Submit
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
- 
-  // Portal renders outside Dashboard stacking context — always on top
-  return ReactDOM.createPortal(modalContent, document.body);
 }
- 
-export default FormModal;

@@ -1,20 +1,14 @@
+import axiosInstance from "../api/axiosInstance";
 import { ENDPOINTS } from "../api/apiConfig";
 
 // LOGIN
 export const loginUser = async (loginData) => {
-  const response = await fetch(ENDPOINTS.login, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(loginData),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Login Failed");
+  try {
+    const response = await axiosInstance.post(ENDPOINTS.login, loginData);
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message || error.message || "Login Failed";
+    throw new Error(message);
   }
-
-  return data;
 };

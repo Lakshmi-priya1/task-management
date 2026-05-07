@@ -1,92 +1,97 @@
+// ======================================================
+// FILE: services/taskService.js
+// ======================================================
+
+import axiosInstance from "../api/axiosInstance";
 import { BASE_URL, ENDPOINTS } from "../api/apiConfig";
 
-// ================= HEADERS =================
-const getHeaders = () => {
-  const token = localStorage.getItem("token");
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+const handleError = (error, fallbackMessage) => {
+  const message =
+    error.response?.data?.message || error.message || fallbackMessage;
+  throw new Error(message);
 };
 
-// ================= GET ALL TASKS =================
 export const getAllTasks = async () => {
-  const res = await fetch(ENDPOINTS.getAllTasks, {
-    headers: getHeaders(),
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch tasks");
-
-  return await res.json();
+  try {
+    const response = await axiosInstance.get(ENDPOINTS.getAllTasks);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch tasks");
+  }
 };
 
-// ================= GET TASK BY ID =================
 export const getTaskById = async (id) => {
-  const res = await fetch(ENDPOINTS.getTaskById(id), {
-    headers: getHeaders(),
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch task");
-
-  return await res.json();
+  try {
+    const response = await axiosInstance.get(ENDPOINTS.getTaskById(id));
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch task");
+  }
 };
 
-// ================= PAGINATION + FILTER =================
 export const getTasks = async ({
   keyword = "",
   status = "",
   page = 0,
   size = 5,
 } = {}) => {
-  const url = `${BASE_URL}/tasks?page=${page}&size=${size}&keyword=${encodeURIComponent(
-    keyword || ""
-  )}&status=${status || ""}`;
+  // fixed: only append params when they have values, don't send &keyword=&status=
+  let url = `${BASE_URL}/tasks?page=${page}&size=${size}`;
 
-  const res = await fetch(url, {
-    headers: getHeaders(),
-  });
+  if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+  if (status) url += `&status=${encodeURIComponent(status)}`;
 
-  if (!res.ok) throw new Error("Failed to fetch paginated tasks");
-
-  return await res.json();
+  try {
+    const response = await axiosInstance.get(url);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch paginated tasks");
+  }
 };
 
-
-// ================= ADD TASK =================
 export const addTask = async (taskData) => {
-  const res = await fetch(ENDPOINTS.addTask, {
-    method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify(taskData),
-  });
-
-  if (!res.ok) throw new Error("Failed to add task");
-
-  return await res.json();
+  try {
+    const response = await axiosInstance.post(ENDPOINTS.addTask, taskData);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to add task");
+  }
 };
 
-// ================= UPDATE TASK =================
 export const updateTask = async (id, taskData) => {
-  const res = await fetch(ENDPOINTS.updateTask(id), {
-    method: "PUT",
-    headers: getHeaders(),
-    body: JSON.stringify(taskData),
-  });
-
-  if (!res.ok) throw new Error("Failed to update task");
-
-  return await res.json();
+  try {
+    const response = await axiosInstance.put(ENDPOINTS.updateTask(id), taskData);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to update task");
+  }
 };
 
-// ================= DELETE TASK =================
 export const deleteTask = async (id) => {
-  const res = await fetch(ENDPOINTS.deleteTask(id), {
-    method: "DELETE",
-    headers: getHeaders(),
-  });
+  try {
+    await axiosInstance.delete(ENDPOINTS.deleteTask(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to delete task");
+  }
+};
 
-  if (!res.ok) throw new Error("Failed to delete task");
+export const assignEmployeeToTask = async (taskId, employeeId) => {
+  try {
+    const response = await axiosInstance.put(ENDPOINTS.assignTaskToEmployee(taskId, employeeId));
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to assign employee to task");
+  }
+};
 
-  return true;
+export const unassignEmployeeFromTask = async (taskId, employeeId) => {
+  try {
+    const response = await axiosInstance.delete(
+      ENDPOINTS.unassignTaskFromEmployee(taskId, employeeId)
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to unassign employee from task");
+  }
 };

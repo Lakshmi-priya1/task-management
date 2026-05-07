@@ -1,13 +1,12 @@
-import { BASE_URL,ENDPOINTS } from "../api/apiConfig";
+import axiosInstance from "../api/axiosInstance";
+import { BASE_URL, ENDPOINTS } from "../api/apiConfig";
 
-// ================= COMMON HEADERS =================
-const getHeaders = () => {
-  const token = localStorage.getItem("token");
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+const handleError = (error, fallbackMessage) => {
+  const message =
+    error.response?.data?.message ||
+    error.message ||
+    fallbackMessage;
+  throw new Error(message);
 };
 
 export const getEmployees = async ({
@@ -21,61 +20,54 @@ export const getEmployees = async ({
   if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
   if (department) url += `&department=${encodeURIComponent(department)}`;
 
-  const response = await fetch(url, {
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch employees");
+  try {
+    const response = await axiosInstance.get(url);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch employees");
   }
-
-  return await response.json();
 };
 // ================= GET BY ID =================
 export const getEmployeeById = async (id) => {
-  const response = await fetch(ENDPOINTS.getEmployeeById(id), {
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) throw new Error("Failed to fetch employee");
-
-  return await response.json();
+  try {
+    const response = await axiosInstance.get(
+      ENDPOINTS.getEmployeeById(id)
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch employee");
+  }
 };
 
 // ================= ADD =================
 export const addEmployee = async (data) => {
-  const response = await fetch(ENDPOINTS.addEmployee, {
-    method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) throw new Error("Failed to add employee");
-
-  return await response.json();
+  try {
+    const response = await axiosInstance.post(ENDPOINTS.addEmployee, data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to add employee");
+  }
 };
 
 // ================= UPDATE =================
 export const updateEmployee = async (id, data) => {
-  const response = await fetch(ENDPOINTS.updateEmployee(id), {
-    method: "PUT",
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) throw new Error("Failed to update employee");
-
-  return await response.json();
+  try {
+    const response = await axiosInstance.put(
+      ENDPOINTS.updateEmployee(id),
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to update employee");
+  }
 };
 
 // ================= DELETE =================
 export const deleteEmployee = async (id) => {
-  const response = await fetch(ENDPOINTS.deleteEmployee(id), {
-    method: "DELETE",
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) throw new Error("Failed to delete employee");
-
-  return true;
+  try {
+    await axiosInstance.delete(ENDPOINTS.deleteEmployee(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to delete employee");
+  }
 };

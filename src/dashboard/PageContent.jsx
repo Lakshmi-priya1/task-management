@@ -1,216 +1,348 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
-FaTasks,
-FaCheckCircle,
-FaHourglassHalf,
-FaList,
-} from "react-icons/fa";
-import "../assets/Dashboard.css";
-import welcomeImg from "../assets/icon.jpg";
-import { getAllTasks } from "../services/taskService";
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+} from "@mui/material";
 
 import {
-PieChart,
-Pie,
-Cell,
-Tooltip,
-ResponsiveContainer,
-BarChart,
-Bar,
-XAxis,
-YAxis,
-CartesianGrid,
-Legend,
+  AssignmentRounded,
+  CheckCircleRounded,
+  PendingActionsRounded,
+  AutorenewRounded,
+} from "@mui/icons-material";
+
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  YAxis,
 } from "recharts";
 
-function PageContent() {
-const [tasks, setTasks] = useState([]);
-const [time, setTime] = useState(new Date());
-const [message, setMessage] = useState("Stay productive 🚀");
+import { getAllTasks } from "../services/taskService";
 
-const messageIndex = useRef(0);
+const COLORS = ["#10b981", "#6366f1", "#f59e0b"];
 
-/* 🔄 Fetch Tasks */
-useEffect(() => {
-getAllTasks()
-.then((data) => {
-setTasks(Array.isArray(data) ? data : data.data || []);
-})
-.catch((err) => console.log(err));
-}, []);
+export default function PageContent() {
+  const [tasks, setTasks] = useState([]);
 
-/* ⏰ Live Time */
-useEffect(() => {
-const interval = setInterval(() => {
-setTime(new Date());
-}, 1000);
-return () => clearInterval(interval);
-}, []);
+  const quotes = [
+    "Stay consistent, results will follow 💪",
+    "Small progress each day adds up to big results 🚀",
+    "Focus on progress, not perfection ✨",
+    "Discipline is stronger than motivation 🔥",
+    "Great things take time — keep going ⏳",
+  ];
 
-/* 💬 Stable Message Rotation */
-useEffect(() => {
-const messages = [
-"Stay productive 🚀",
-"Keep pushing forward ✨",
-"You’re doing great 🌟",
-];
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+  const [time, setTime] = useState(new Date());
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    if (hour < 21) return "Good Evening";
+    return "Good Night";
+  };
 
+  const [greeting, setGreeting] = useState(getGreeting());
 
-const interval = setInterval(() => {
-  messageIndex.current =
-    (messageIndex.current + 1) % messages.length;
+  useEffect(() => {
+    getAllTasks()
+      .then((res) =>
+        setTasks(Array.isArray(res) ? res : res.data || [])
+      )
+      .catch(console.error);
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(new Date());
+      setGreeting(getGreeting());
+    }, 1000);
 
-  setMessage(messages[messageIndex.current]);
-}, 5000);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
 
-return () => clearInterval(interval);
+      setTimeout(() => {
+        setQuoteIndex((prev) => (prev + 1) % quotes.length);
+        setFade(true);
+      }, 300);
+    }, 4000);
 
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-}, []);
+  const stats = tasks.reduce(
+    (a, t) => {
+      a.total++;
+      if (t.status === "COMPLETED") a.completed++;
+      if (t.status === "PENDING") a.pending++;
+      if (t.status === "IN_PROGRESS") a.progress++;
+      return a;
+    },
+    {
+      total: 0,
+      completed: 0,
+      pending: 0,
+      progress: 0,
+    }
+  );
 
-/* 👋 Greeting */
-const getGreeting = () => {
-const hour = time.getHours();
-if (hour < 12) return "Good Morning ☀️";
-if (hour < 18) return "Good Afternoon 🌤️";
-if (hour < 22) return "Good Evening 🌙";
-return "Good Night 🌕";
-};
+  const chartData = [
+    { name: "Completed", value: stats.completed },
+    { name: "Progress", value: stats.progress },
+    { name: "Pending", value: stats.pending },
+  ];
 
-/* ⚡ Optimized Stats */
-const stats = tasks.reduce(
-(acc, t) => {
-acc.total++;
-if (t.status === "COMPLETED") acc.completed++;
-else if (t.status === "PENDING") acc.pending++;
-else if (t.status === "IN_PROGRESS") acc.inProgress++;
-return acc;
-},
-{ total: 0, completed: 0, pending: 0, inProgress: 0 }
-);
+  const cards = [
+    {
+      title: "Total Tasks",
+      value: stats.total,
+      icon: <AssignmentRounded />,
+      color: "linear-gradient(135deg,#8b5cf6,#a855f7)",
+    },
+    {
+      title: "Completed",
+      value: stats.completed,
+      icon: <CheckCircleRounded />,
+      color: "linear-gradient(135deg,#10b981,#34d399)",
+    },
+    {
+      title: "In Progress",
+      value: stats.progress,
+      icon: <AutorenewRounded />,
+      color: "linear-gradient(135deg,#6366f1,#818cf8)",
+    },
+    {
+      title: "Pending",
+      value: stats.pending,
+      icon: <PendingActionsRounded />,
+      color: "linear-gradient(135deg,#f59e0b,#fb923c)",
+    },
+  ];
 
-const chartData = [
-{ name: "Completed", value: stats.completed },
-{ name: "In Progress", value: stats.inProgress },
-{ name: "Pending", value: stats.pending },
-];
+  return (
+    <Box>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: "26px",
+          background:
+            "linear-gradient(135deg,#7c3aed,#8b5cf6,#a855f7)",
+          color: "#fff",
+          boxShadow: "0 20px 40px rgba(124,58,237,.22)",
+        }}
+      >
+        <CardContent sx={{ p: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  mb: 1,
+                }}
+              >
+                {greeting}
+              </Typography>
 
-const COLORS = ["#22c55e", "#3b82f6", "#f59e0b"];
+              <Typography
+                sx={{
+                  fontSize: 16,
+                  fontStyle: "italic",
+                  opacity: fade ? 0.95 : 0,
+                  transform: fade
+                    ? "translateY(0px)"
+                    : "translateY(10px)",
+                  transition: "all 0.4s ease",
+                }}
+              >
+                {quotes[quoteIndex]}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                textAlign: "right",
+                minWidth: 180,
+              }}
+            >
+              <br />
+              <Typography sx={{ fontSize: 15, opacity: 0.8 }}>
+                Local Time
+              </Typography>
 
-return ( <div className="container-fluid page-content">
+              <Typography sx={{ fontSize: 25, fontWeight: 700 }}>
+                {time.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Typography>
+              <Typography sx={{ fontSize: 13, opacity: 0.8 }}>
+                {time.toLocaleDateString([], {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}{" "}
+              </Typography>
+            </Box>
+          </Box>
 
+          {/* CHIPS */}
+          <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+            <Chip
+              label={`${stats.pending} Pending`}
+              sx={{
+                bgcolor: "rgba(255,255,255,.18)",
+                color: "#fff",
+              }}
+            />
 
-  <div className="card shadow mb-4 welcome-card">
-    <div className="card-body d-flex justify-content-between align-items-center">
+            <Chip
+              label={`${stats.completed} Done`}
+              sx={{
+                bgcolor: "rgba(255,255,255,.18)",
+                color: "#fff",
+              }}
+            />
+          </Box>
+        </CardContent>
+      </Card>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "1fr 1fr",
+            md: "repeat(4,1fr)",
+          },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {cards.map((card, i) => (
+          <Card
+            key={i}
+            sx={{
+              borderRadius: "22px",
+              background: "rgba(255,255,255,.6)",
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 12px 30px rgba(0,0,0,.05)",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  background: card.color,
+                  mb: 2,
+                }}
+              >
+                {card.icon}
+              </Box>
 
-      {/* LEFT */}
-      <div>
-        <h3 className="fw-bold mb-1">{getGreeting()}</h3>
+              <Typography sx={{ fontSize: 14, color: "#6b7280" }}>
+                {card.title}
+              </Typography>
 
-        <p className="mb-1 text-muted">
-          You have <strong>{stats.pending}</strong> pending tasks and{" "}
-          <strong>{stats.inProgress}</strong> in progress.
-        </p>
+              <Typography
+                sx={{
+                  fontSize: 34,
+                  fontWeight: 800,
+                  color: "#111827",
+                }}
+              >
+                {card.value}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
 
-        <small className="text-secondary fade-text">
-          {message}
-        </small>
-      </div>
+      {/* 📈 CHARTS */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "1fr 1fr",
+          },
+          gap: 2,
+        }}
+      >
+        {/* PIE */}
+        <Card sx={{ borderRadius: "24px", p: 3 }}>
+          <Typography sx={{ fontWeight: 800, mb: 2 }}>
+            Task Distribution
+          </Typography>
 
-      {/* RIGHT */}
-      <div className="text-end d-flex flex-column align-items-center">
-        <img src={welcomeImg} alt="welcome" className="welcome-img mb-2" />
-        <div className="text-muted">
-          {time.toLocaleTimeString()}
-        </div>
-      </div>
+          <Box sx={{ height: 300 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  outerRadius={110}
+                  innerRadius={55}
+                >
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        </Card>
 
-    </div>
-  </div>
+        {/* BAR */}
+        <Card sx={{ borderRadius: "24px", p: 3 }}>
+          <Typography sx={{ fontWeight: 800, mb: 2 }}>
+            Status Overview
+          </Typography>
 
-  {/* 📊 STATS */}
-  <div className="row mb-4">
-    <div className="col-md-3">
-      <div className="card shadow text-center p-3">
-        <FaList size={22} />
-        <h6>Total Tasks</h6>
-        <h3>{stats.total}</h3>
-      </div>
-    </div>
-
-    <div className="col-md-3">
-      <div className="card shadow text-center p-3">
-        <FaCheckCircle size={22} className="text-success" />
-        <h6>Completed</h6>
-        <h3 className="text-success">{stats.completed}</h3>
-      </div>
-    </div>
-
-    <div className="col-md-3">
-      <div className="card shadow text-center p-3">
-        <FaHourglassHalf size={22} className="text-primary" />
-        <h6>In Progress</h6>
-        <h3 className="text-primary">{stats.inProgress}</h3>
-      </div>
-    </div>
-
-    <div className="col-md-3">
-      <div className="card shadow text-center p-3">
-        <FaTasks size={22} className="text-warning" />
-        <h6>Pending</h6>
-        <h3 className="text-warning">{stats.pending}</h3>
-      </div>
-    </div>
-  </div>
-
-  {/* 📈 CHARTS */}
-  <div className="row mb-4">
-
-    {/* PIE */}
-    <div className="col-md-6">
-      <div className="card shadow p-3">
-        <h5 className="text-center mb-3">Task Distribution</h5>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie data={chartData} dataKey="value" outerRadius={100}>
-              {chartData.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-
-    {/* BAR */}
-    <div className="col-md-6">
-      <div className="card shadow p-3">
-        <h5 className="text-center mb-3">Task Status Chart</h5>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="value">
-              {chartData.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-
-);
+          <Box sx={{ height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value">
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Card>
+      </Box>
+    </Box>
+  );
 }
-
-export default PageContent;
