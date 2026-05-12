@@ -4,13 +4,11 @@
 
 import axiosInstance from "../api/axiosInstance";
 import { BASE_URL, ENDPOINTS } from "../api/apiConfig";
-
 const handleError = (error, fallbackMessage) => {
-  const message =
-    error.response?.data?.message ||
-    error.message ||
-    fallbackMessage;
-  throw new Error(message);
+  if (error.response) {
+    throw error;
+  }
+  throw new Error(error.message || fallbackMessage);
 };
 
 // GET ALL WITH FILTER
@@ -85,6 +83,16 @@ export const deleteMilestone = async (
     handleError(error, "Failed");
   }
 };
+
+export const softDeleteMilestone = async (id) => {
+  try {
+    await axiosInstance.delete(ENDPOINTS.softDeleteMilestone(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to soft delete milestone");
+  }
+};
+
 export const assignTaskToMilestone = async (milestoneId, taskId) => {
   try {
     await axiosInstance.post(
@@ -96,5 +104,28 @@ export const assignTaskToMilestone = async (milestoneId, taskId) => {
       error.message ||
       "Failed to assign task";
     throw new Error(message);
+  }
+};
+// ASSIGN EMPLOYEE TO MILESTONE
+export const assignEmployeeToMilestone = async (milestoneId, employeeId) => {
+  try {
+    const response = await axiosInstance.put(
+      ENDPOINTS.assignEmployeeToMilestone(milestoneId, employeeId)
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to assign employee to milestone");
+  }
+};
+
+// UNASSIGN EMPLOYEE FROM MILESTONE
+export const unassignEmployeeFromMilestone = async (milestoneId, employeeId) => {
+  try {
+    const response = await axiosInstance.delete(
+      ENDPOINTS.unassignEmployeeFromMilestone(milestoneId, employeeId)
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to unassign employee from milestone");
   }
 };

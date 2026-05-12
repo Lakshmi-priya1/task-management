@@ -1,562 +1,230 @@
-import { useState, useEffect, useCallback } from "react";
+// pages/Project.jsx
+import { useState, useEffect } from "react";
 import {
-  Box,
-  Button,
-  Typography,
-  TextField,
-  InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
-  Card,
-  Chip,
-  Stack,
-  Drawer,
-  IconButton,
-  Divider,
-  Alert,
-  Collapse,
-  Tooltip,
+  Box, Button, Typography, TextField,
+  InputAdornment, Select, MenuItem, FormControl, Card,
+  Chip, Drawer, IconButton, Divider,
 } from "@mui/material";
-
 import {
-  AddRounded,
-  SearchRounded,
-  FilterListRounded,
-  FolderRounded,
-  PersonAddRounded,
-  CloseRounded,
-  ArrowBackRounded,
+  AddRounded, SearchRounded, FilterListRounded, FolderRounded,
+  PersonAddRounded, CloseRounded, ArrowBackRounded,
+  CheckCircleRounded, RemoveCircleRounded,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 
-import Swal from "sweetalert2";
-
-import DataTable from "../components/DataTable";
-import FormModal from "../components/FormModal";
+import DataTable  from "../components/DataTable";
+import FormModal  from "../components/FormModal";
 import ViewDrawer from "../components/ViewDrawer";
 
-import {
-  getProjects,
-  addProject,
-  updateProject,
-  deleteProject,
-  assignEmployeeToProject,
-  removeEmployeeFromProject,
-} from "../services/projectService";
+import useProject,           { PROJECT_STATUSES } from "../hooks/useProject";
+import { getProjectStyles }                       from "../styles/projectStyles";
 
-import { getEmployees } from "../services/employeeService";
-
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 2500,
-  didOpen: (t) => {
-    t.style.marginTop = "70px";
-  },
-});
-
-const PROJECT_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED"];
-
-const emptyForm = {
-  projectName: "",
-  description: "",
-  status: "PENDING",
-  startDate: "",
-  endDate: "",
-};
+const MAX_VISIBLE_CHIPS = 4;
 
 export default function Project() {
+  const theme  = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const sx     = getProjectStyles(isDark);
 
-  // ================= STATE =================
-  const [projects, setProjects] = useState([]);
-  const [employees, setEmployees] = useState([]);
+  const {
+    projects, employees, loading, totalPages,
+    keyword, status, page,
+    editing, form, setForm,
+    modalOpen, viewOpen, selected,
+    assignOpen, assignProject,
+    assignedEmployeeIds, selectEmployeeId, setSelectEmployeeId,
+    assignSuccess, setAssignSuccess,
+    availableEmployees,
+    openAddModal,
+    handleSubmit, handleDelete, handleView, handleEdit,
+    openAssign, handleAssign, handleRemove,
+    handleCloseModal, handleCloseView, handleCloseAssign,
+    dispatch, setKeyword, setStatus, setPage,
+  } = useProject();
 
-  const [form, setForm] = useState(emptyForm);
-  const [editing, setEditing] = useState(null);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [viewOpen, setViewOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [assignProject, setAssignProject] = useState(null);
-
-  const [assignedEmployeeIds, setAssignedEmployeeIds] = useState([]);
-  const [selectEmployeeId, setSelectEmployeeId] = useState("");
-
-  // SUCCESS MESSAGE
-  const [assignSuccess, setAssignSuccess] = useState("");
-
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const reset = useCallback(() => {
-    setEditing(null);
-    setForm(emptyForm);
-  }, []);
-
-  // ================= LOAD =================
-  const loadProjects = useCallback(async () => {
-    const res = await getProjects({
-      keyword: search,
-      status,
-      page,
-      size: 5,
-    });
-
-    setProjects(res?.content || []);
-    setTotalPages(res?.totalPages || 1);
-  }, [search, status, page]);
-
-  const loadEmployees = useCallback(async () => {
-    const res = await getEmployees({ page: 0, size: 100 });
-    setEmployees(res?.content || []);
-  }, []);
+  // ── Show all chips toggle ────────────────────────────
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadProjects();
-  }, [loadProjects]);
+    if (!assignOpen) setShowAll(false);
+  }, [assignOpen]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadEmployees();
-  }, [loadEmployees]);
+  const visibleChips = showAll
+    ? assignedEmployeeIds
+    : assignedEmployeeIds.slice(0, MAX_VISIBLE_CHIPS);
+  const hiddenCount = assignedEmployeeIds.length - MAX_VISIBLE_CHIPS;
 
-  // ================= CRUD =================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      projectName: form.projectName,
-      description: form.description,
-      status: form.status,
-      startDate: form.startDate
-        ? `${form.startDate}T00:00:00`
-        : null,
-      endDate: form.endDate
-        ? `${form.endDate}T00:00:00`
-        : null,
-    };
-
-    if (editing) {
-      await updateProject(editing.projectId, payload);
-
-      Toast.fire({
-        icon: "success",
-        title: "Updated Successfully",
-      });
-    } else {
-      await addProject(payload);
-
-      Toast.fire({
-        icon: "success",
-        title: "Added Successfully",
-      });
-    }
-
-    setModalOpen(false);
-    reset();
-    loadProjects();
+  const moreChipSx = {
+    backgroundColor: isDark ? "rgba(99,102,241,0.15)" : "#ede9fe",
+    color: "#6366f1",
+    fontWeight: 700,
+    fontSize: 12,
+    cursor: "pointer",
+    "&:hover": {
+      backgroundColor: isDark ? "rgba(99,102,241,0.25)" : "#ddd6fe",
+    },
   };
 
-  const handleDelete = async (id) => {
-    const res = await Swal.fire({
-      title: "Delete Project?",
-      icon: "warning",
-      showCancelButton: true,
-    });
-
-    if (res.isConfirmed) {
-      await deleteProject(id);
-
-      Toast.fire({
-        icon: "success",
-        title: "Deleted",
-      });
-
-      loadProjects();
-    }
+  // ── Banner colour tokens ─────────────────────────────
+  const isSuccessBanner = assignSuccess?.type === "success";
+  const bannerColors = {
+    bg:     isSuccessBanner
+      ? isDark ? "rgba(34,197,94,0.12)"  : "#f0fdf4"
+      : isDark ? "rgba(239,68,68,0.12)"  : "#fef2f2",
+    border: isSuccessBanner
+      ? isDark ? "rgba(34,197,94,0.30)"  : "#bbf7d0"
+      : isDark ? "rgba(239,68,68,0.30)"  : "#fecaca",
+    text:   isSuccessBanner
+      ? isDark ? "#86efac" : "#16a34a"
+      : isDark ? "#fca5a5" : "#dc2626",
   };
 
-  // ================= ASSIGN DRAWER =================
-  const openAssign = (project) => {
-    setAssignProject(project);
-
-    setAssignedEmployeeIds(
-      project.employeeIds?.map(Number) || []
-    );
-
-    setSelectEmployeeId("");
-    setAssignSuccess("");
-    setAssignOpen(true);
-  };
-
-  // ================= ASSIGN =================
-  const handleAssign = async () => {
-    if (!assignProject || !selectEmployeeId) return;
-
-    try {
-      await assignEmployeeToProject(
-        assignProject.projectId,
-        selectEmployeeId
-      );
-
-      const newId = Number(selectEmployeeId);
-
-      setAssignedEmployeeIds((prev) =>
-        prev.includes(newId)
-          ? prev
-          : [...prev, newId]
-      );
-
-      const employee = employees.find(
-        (e) => Number(e.employeeId) === newId
-      );
-
-      const employeeName = employee
-        ? `${employee.firstName} ${employee.lastName || ""}`.trim()
-        : "Employee";
-
-      setAssignSuccess(
-        `${employeeName} assigned successfully`
-      );
-
-      setSelectEmployeeId("");
-
-      Toast.fire({
-        icon: "success",
-        title: "Employee Assigned",
-      });
-
-      loadProjects();
-    } catch {
-      Toast.fire({
-        icon: "error",
-        title: "Failed to assign employee",
-      });
-    }
-  };
-
-  // ================= REMOVE =================
-  const handleRemove = async (employeeId) => {
-    if (!assignProject) return;
-
-    try {
-      await removeEmployeeFromProject(
-        assignProject.projectId,
-        employeeId
-      );
-
-      setAssignedEmployeeIds((prev) =>
-        prev.filter(
-          (id) => id !== Number(employeeId)
-        )
-      );
-
-      setAssignSuccess("Employee removed successfully");
-
-      Toast.fire({
-        icon: "success",
-        title: "Employee Removed",
-      });
-
-      loadProjects();
-    } catch {
-      Toast.fire({
-        icon: "error",
-        title: "Failed to remove employee",
-      });
-    }
-  };
-
-  // ================= FILTER =================
-  const availableEmployees = employees.filter(
-    (e) =>
-      !assignedEmployeeIds.includes(
-        Number(e.employeeId)
-      )
-  );
-
-  // ================= UI =================
   return (
     <Box>
-
       {/* SEARCH + FILTER + ADD */}
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2, alignItems: "center" }}>
-        <TextField size="small" placeholder="Search project..." value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ minWidth: 240, "& .MuiOutlinedInput-root": { borderRadius: "16px", background: "rgba(255,255,255,.65)" } }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchRounded /></InputAdornment> }} />
-        <FormControl size="small" sx={{ minWidth: 180, "& .MuiOutlinedInput-root": { borderRadius: "16px", background: "rgba(255,255,255,.65)" } }}>
-          <Select value={status} onChange={(e) => setStatus(e.target.value)} displayEmpty>
+      <Box sx={sx.toolbarSx}>
+        <TextField
+          size="small"
+          placeholder="Search project..."
+          value={keyword}
+          onChange={(e) => dispatch(setKeyword(e.target.value))}
+          sx={sx.inputSx}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRounded />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+        <FormControl size="small" sx={sx.filterSx}>
+          <Select
+            value={status}
+            onChange={(e) => dispatch(setStatus(e.target.value))}
+            displayEmpty
+            renderValue={(val) => (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <FilterListRounded sx={{ fontSize: 18, color: "#94a3b8" }} />
+                {val || "All Status"}
+              </Box>
+            )}
+          >
             <MenuItem value="">All Status</MenuItem>
-            {PROJECT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            {PROJECT_STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>{s}</MenuItem>
+            ))}
           </Select>
         </FormControl>
-        <Button
-          startIcon={<AddRounded />}
-          onClick={() => { reset(); setModalOpen(true); }}
-          sx={{ ml: "auto", px: 2.5, py: 1, borderRadius: "14px", fontWeight: 700, background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff", textTransform: "none", "&:hover": { opacity: 0.88 } }}
-        >
+        <Button startIcon={<AddRounded />} onClick={openAddModal} sx={sx.addButtonSx}>
           Add Project
         </Button>
       </Box>
 
       {/* TABLE */}
-      <Card
-        sx={{
-          borderRadius: "24px",
-          overflow: "hidden",
-          background:
-            "rgba(255,255,255,.70)",
-          backdropFilter: "blur(16px)",
-          boxShadow:
-            "0 12px 30px rgba(0,0,0,.05)",
-        }}
-      >
-        <Box
-          sx={{
-            px: 3,
-            py: 2,
-            borderBottom:
-              "1px solid rgba(0,0,0,.06)",
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
-        >
-          <FolderRounded
-            sx={{ color: "#6366f1" }}
-          />
-
-          <Typography
-            sx={{
-              fontWeight: 800,
-              color: "#312e81",
-            }}
-          >
-            Project List
-          </Typography>
+      <Card sx={sx.cardSx}>
+        <Box sx={sx.cardHeaderSx}>
+          <FolderRounded sx={{ color: "#6366f1" }} />
+          <Typography sx={sx.cardTitleSx}>Project List</Typography>
         </Box>
-
         <DataTable
           data={projects}
-          columns={[
-            "Project Name",
-            "Status",
-            "Start Date",
-            "End Date",
-          ]}
-          fields={[
-            "projectName",
-            "status",
-            "startDate",
-            "endDate",
-          ]}
+          columns={["Project Name", "Status", "Start Date", "End Date"]}
+          fields={["projectName", "status", "startDate", "endDate"]}
           idField="projectId"
+          loading={loading}
           page={page}
           totalPages={totalPages}
-          onPageChange={setPage}
-
-          handleView={(id) => {
-            setSelected(
-              projects.find(
-                (p) => p.projectId === id
-              )
-            );
-
-            setViewOpen(true);
-          }}
-
-          handleEdit={(item) => {
-            setEditing(item);
-
-            setForm({
-              projectName: item.projectName,
-              description: item.description,
-              status: item.status,
-              startDate:
-                item.startDate?.split("T")[0],
-              endDate:
-                item.endDate?.split("T")[0],
-            });
-
-            setModalOpen(true);
-          }}
-
+          onPageChange={(val) => dispatch(setPage(val))}
           handleDelete={handleDelete}
-
+          handleView={handleView}
+          handleEdit={handleEdit}
           extraActions={[
             {
               label: "Assign Team",
-              icon: (
-                <PersonAddRounded
-                  sx={{ fontSize: 16 }}
-                />
-              ),
+              icon: <PersonAddRounded sx={{ fontSize: 16 }} />,
               color: "#0891b2",
               bg: "rgba(8,145,178,0.07)",
-              onClick: (id, row) =>
-                openAssign(row),
+              onClick: (id, row) => openAssign(row),
             },
           ]}
         />
       </Card>
 
       {/* VIEW DRAWER */}
-     <ViewDrawer
-  isOpen={viewOpen}
-  onClose={() => setViewOpen(false)}
-  title="Project Details"
-  status={selected?.status}
-  sections={
-    selected
-      ? [
-          // ================= BASIC INFO =================
-          {
-            heading: "Basic Info",
-            fields: [
-              {
-                label: "Project ID",
-                value: selected.projectId,
-                badge: true,
-              },
-              {
-                label: "Project Name",
-                value: selected.projectName,
-              },
-              {
-                label: "Description",
-                value: selected.description || "—",
-              },
-              {
-                label: "Status",
-                value: selected.status,
-                badge: true,
-              },
-              {
-                label: "Start Date",
-                value:
-                  selected.startDate?.split("T")[0] || "—",
-              },
-              {
-                label: "End Date",
-                value:
-                  selected.endDate?.split("T")[0] || "—",
-              },
-            ],
-          },
-
-          // ================= EMPLOYEES =================
-          {
-            heading: "Assigned Employees",
-            fields:
-              selected.employeeIds?.length > 0
-                ? selected.employeeIds.map((id, index) => ({
-                    label:
-                      selected.employeeFirstNames?.[index] ||
-                      `Employee ${index + 1}`,
+      <ViewDrawer
+        isOpen={viewOpen}
+        onClose={handleCloseView}
+        title="Project Details"
+        status={selected?.status}
+        sections={
+          selected ? [
+            {
+              heading: "Basic Info",
+              fields: [
+                { label: "Project ID",   value: selected.projectId,                       badge: true },
+                { label: "Project Name", value: selected.projectName },
+                { label: "Description",  value: selected.description || "—" },
+                { label: "Status",       value: selected.status,                          badge: true },
+                { label: "Start Date",   value: selected.startDate?.split("T")[0] || "—" },
+                { label: "End Date",     value: selected.endDate?.split("T")[0]   || "—" },
+              ],
+            },
+            {
+              heading: "Assigned Employees",
+              fields: selected.employeeIds?.length > 0
+                ? selected.employeeIds.map((id, i) => ({
+                    label: selected.employeeFirstNames?.[i] || `Employee ${i + 1}`,
                     value: `Employee ID : ${id}`,
                     badge: true,
                   }))
-                : [
-                    {
-                      label: "No Employees Assigned",
-                      value: "—",
-                    },
-                  ],
-          },
-
-          // ================= TASKS =================
-          {
-            heading: "Tasks",
-            fields:
-              selected.taskIds?.length > 0
-                ? selected.taskIds.map((id, index) => ({
-                    label:
-                      selected.taskTitles?.[index] ||
-                      `Task ${index + 1}`,
+                : [{ label: "No Employees Assigned", value: "—" }],
+            },
+            {
+              heading: "Tasks",
+              fields: selected.taskIds?.length > 0
+                ? selected.taskIds.map((id, i) => ({
+                    label: selected.taskTitles?.[i] || `Task ${i + 1}`,
                     value: `Task ID : ${id}`,
                     badge: true,
                   }))
-                : [
-                    {
-                      label: "No Tasks Available",
-                      value: "—",
-                    },
-                  ],
-          },
-
-          // ================= MILESTONES =================
-          {
-            heading: "Milestones",
-            fields:
-              selected.milestoneIds?.length > 0
-                ? selected.milestoneIds.map((id, index) => ({
-                    label:
-                      selected.milestoneNames?.[index] ||
-                      `Milestone ${index + 1}`,
+                : [{ label: "No Tasks Available", value: "—" }],
+            },
+            {
+              heading: "Milestones",
+              fields: selected.milestoneIds?.length > 0
+                ? selected.milestoneIds.map((id, i) => ({
+                    label: selected.milestoneNames?.[i] || `Milestone ${i + 1}`,
                     value: `Milestone ID : ${id}`,
                     badge: true,
                   }))
-                : [
-                    {
-                      label: "No Milestones",
-                      value: "—",
-                    },
-                  ],
-          },
-        ]
-      : []
-  }
-/>
+                : [{ label: "No Milestones", value: "—" }],
+            },
+          ] : []
+        }
+      />
 
       {/* FORM MODAL */}
       <FormModal
         isOpen={modalOpen}
-        handleClose={() => {
-          setModalOpen(false);
-          reset();
-        }}
-        title={
-          editing
-            ? "Edit Project"
-            : "Add Project"
-        }
+        handleClose={handleCloseModal}
+        title={editing ? "Edit Project" : "Add Project"}
+        subtitle={editing ? "Update project details" : "Fill in the details to create a project"}
         formData={form}
         setFormData={setForm}
         handleSubmit={handleSubmit}
-        tabs={[
+        submitLabel={editing ? "Save changes" : "Add project"}
+        sections={[
           {
-            key: "basic",
-            label: "Basic Info",
+            label: "Project info",
             fields: [
-              {
-                name: "projectName",
-                type: "text",
-              },
-              {
-                name: "description",
-                type: "text",
-              },
-              {
-                name: "status",
-                type: "select",
-                options:
-                  PROJECT_STATUSES,
-              },
-              {
-                name: "startDate",
-                type: "date",
-              },
-              {
-                name: "endDate",
-                type: "date",
-              },
+              { name: "projectName", label: "Project name", type: "text" },
+              { name: "description", label: "Description",  type: "text", multiline: true, rows: 2 },
+              { name: "status",      label: "Status",       type: "select", options: PROJECT_STATUSES },
+              { name: "startDate",   label: "Start date",   type: "date", half: true },
+              { name: "endDate",     label: "End date",     type: "date", half: true },
             ],
           },
         ]}
@@ -566,254 +234,175 @@ export default function Project() {
       <Drawer
         anchor="right"
         open={assignOpen}
-        onClose={() => setAssignOpen(false)}
-      >
-        <Box
-          sx={{
+        onClose={handleCloseAssign}
+        sx={{
+          "& .MuiDrawer-root": { width: 420 },
+          "& .MuiPaper-root": {
             width: 420,
-            height: "100%",
-            background:
-              "linear-gradient(180deg,#f8fafc,#ffffff)",
+            maxWidth: 420,
+            backgroundColor: isDark ? "#13131f" : "#faf9ff",
             display: "flex",
             flexDirection: "column",
-          }}
-        >
+            overflow: "hidden",
+            overflowX: "hidden",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
 
-          {/* HEADER */}
-          <Box
-            sx={{
-              p: 3,
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-            }}
-          >
+          {/* HEADER — pinned */}
+          <Box sx={sx.drawerHeaderSx}>
             <Box>
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 22,
-                  color: "#312e81",
-                }}
-              >
-                Assign Team
-              </Typography>
-
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  color: "#64748b",
-                  mt: 0.5,
-                }}
-              >
-                {assignProject?.projectName}
-              </Typography>
+              <Typography sx={sx.drawerTitleSx}>Assign Team</Typography>
+              <Typography sx={sx.drawerSubtitleSx}>{assignProject?.projectName}</Typography>
             </Box>
-
-            <IconButton
-              onClick={() =>
-                setAssignOpen(false)
-              }
-            >
-              <CloseRounded />
-            </IconButton>
+            <IconButton onClick={handleCloseAssign}><CloseRounded /></IconButton>
           </Box>
 
           <Divider />
 
-          {/* CURRENT TEAM */}
-          <Box sx={{ p: 3 }}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                mb: 1.5,
-                color: "#6366f1",
-              }}
-            >
-              Current Team
-            </Typography>
+          {/* SCROLLABLE MIDDLE */}
+          <Box sx={{ flex: 1, overflowY: "auto" }}>
 
-            {assignedEmployeeIds.length ===
-            0 ? (
-              <Typography
-                sx={{
-                  color: "#94a3b8",
-                  fontSize: 14,
-                }}
-              >
-                No employees assigned yet
-              </Typography>
-            ) : (
-              <Stack
-                direction="row"
-                flexWrap="wrap"
-                gap={1}
-              >
-                {assignedEmployeeIds.map(
-                  (empId) => {
-                    const emp =
-                      employees.find(
-                        (e) =>
-                          Number(
-                            e.employeeId
-                          ) === empId
-                      );
-
+            {/* CURRENT TEAM */}
+            <Box sx={{ p: 3 }}>
+              <Typography sx={sx.sectionLabelSx}>Current Team</Typography>
+              {assignedEmployeeIds.length === 0 ? (
+                <Typography sx={sx.emptyTextSx}>No employees assigned yet</Typography>
+              ) : (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {visibleChips.map((empId) => {
+                    const emp   = employees.find((e) => Number(e.employeeId) === empId);
                     const label = emp
                       ? `${emp.firstName} ${emp.lastName || ""}`.trim()
                       : `Employee #${empId}`;
-
                     return (
                       <Chip
                         key={empId}
                         label={label}
-                        onDelete={() =>
-                          handleRemove(empId)
-                        }
+                        onDelete={() => handleRemove(empId)}
                         sx={{
-                          background:
-                            "#ede9fe",
-                          color: "#6366f1",
-                          fontWeight: 700,
-                          "& .MuiChip-deleteIcon":
-                            {
-                              color:
-                                "#8b5cf6",
-                            },
+                          ...sx.chipSx,
+                          maxWidth: 130,
+                          "& .MuiChip-label": {
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          },
                         }}
                       />
                     );
-                  }
-                )}
-              </Stack>
-            )}
-          </Box>
+                  })}
 
-          <Divider />
+                  {/* +N more → expand */}
+                  {!showAll && hiddenCount > 0 && (
+                    <Chip
+                      label={`+${hiddenCount} more`}
+                      onClick={() => setShowAll(true)}
+                      sx={moreChipSx}
+                    />
+                  )}
 
-          {/* ADD EMPLOYEE */}
-          <Box sx={{ px: 3, pt: 3 }}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                mb: 1,
-                color: "#6366f1",
-              }}
-            >
-              Add Employee
-            </Typography>
+                  {/* Show less → collapse */}
+                  {showAll && hiddenCount > 0 && (
+                    <Chip
+                      label="Show less"
+                      onClick={() => setShowAll(false)}
+                      sx={moreChipSx}
+                    />
+                  )}
+                </Box>
+              )}
+            </Box>
 
-            {availableEmployees.length ===
-            0 ? (
-              <Typography
-                sx={{
-                  color: "#94a3b8",
-                  fontSize: 14,
-                }}
-              >
-                All employees are already
-                assigned
-              </Typography>
-            ) : (
-              <FormControl fullWidth>
-                <Select
-                  value={selectEmployeeId}
-                  onChange={(e) =>
-                    setSelectEmployeeId(
-                      e.target.value
-                    )
-                  }
-                  displayEmpty
-                >
-                  <MenuItem value="">
-                    Select Employee
-                  </MenuItem>
+            <Divider />
 
-                  {availableEmployees.map(
-                    (e) => (
-                      <MenuItem
-                        key={e.employeeId}
-                        value={e.employeeId}
-                      >
+            {/* ADD EMPLOYEE */}
+            <Box sx={{ px: 3, pt: 3, pb: 3 }}>
+              <Typography sx={{ ...sx.sectionLabelSx, mb: 1 }}>Add Employee</Typography>
+              {availableEmployees.length === 0 ? (
+                <Typography sx={sx.emptyTextSx}>All employees are already assigned</Typography>
+              ) : (
+                <FormControl fullWidth>
+                  <Select
+                    value={selectEmployeeId}
+                    onChange={(e) => setSelectEmployeeId(e.target.value)}
+                    displayEmpty
+                  >
+                    <MenuItem value="">Select Employee</MenuItem>
+                    {availableEmployees.map((e) => (
+                      <MenuItem key={e.employeeId} value={e.employeeId}>
                         {`${e.firstName} ${e.lastName || ""}`.trim()}
                       </MenuItem>
-                    )
-                  )}
-                </Select>
-              </FormControl>
-            )}
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+
           </Box>
 
-          {/* BUTTONS */}
+          {/* ── INLINE BANNER — green for assign, red for remove ── */}
           <Box
             sx={{
-              p: 3,
-              mt: "auto",
+              mx: 2,
+              mb: 1.5,
+              px: 2,
+              py: 1,
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: 2,
+              visibility: assignSuccess ? "visible" : "hidden",
+              backgroundColor: bannerColors.bg,
+              border: `1px solid ${bannerColors.border}`,
+              transition: "background-color 0.25s ease, border-color 0.25s ease",
             }}
           >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {isSuccessBanner
+                ? <CheckCircleRounded sx={{ fontSize: 16, color: bannerColors.text }} />
+                : <RemoveCircleRounded sx={{ fontSize: 16, color: bannerColors.text }} />
+              }
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: bannerColors.text, lineHeight: 1.3 }}>
+                {assignSuccess?.message}
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              onClick={() => setAssignSuccess(null)}
+              sx={{ color: bannerColors.text, p: 0.5, flexShrink: 0 }}
+            >
+              <CloseRounded sx={{ fontSize: 15 }} />
+            </IconButton>
+          </Box>
 
-            {/* SUCCESS MESSAGE */}
-            <Collapse in={!!assignSuccess}>
-              <Alert
-                severity="success"
-                sx={{
-                  mb: 2,
-                  borderRadius: "14px",
-                }}
-                onClose={() =>
-                  setAssignSuccess("")
-                }
-              >
-                {assignSuccess}
-              </Alert>
-            </Collapse>
-
-            <Stack spacing={1.5}>
-
-              {/* ASSIGN */}
+          {/* FOOTER — pinned */}
+          <Box sx={sx.drawerFooterSx}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Button
                 fullWidth
                 variant="contained"
-                startIcon={
-                  <PersonAddRounded />
-                }
+                startIcon={<PersonAddRounded />}
                 onClick={handleAssign}
                 disabled={!selectEmployeeId}
-                sx={{
-                  py: 1.4,
-                  borderRadius: "14px",
-                  fontWeight: 700,
-                  background:
-                    "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                }}
+                sx={sx.assignButtonSx}
               >
                 Assign Employee
               </Button>
-
-              {/* BACK BUTTON */}
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={
-                  <ArrowBackRounded />
-                }
-                onClick={() =>
-                  setAssignOpen(false)
-                }
-                sx={{
-                  py: 1.2,
-                  borderRadius: "14px",
-                  fontWeight: 700,
-                  borderColor: "#cbd5e1",
-                  color: "#475569",
-                }}
+                startIcon={<ArrowBackRounded />}
+                onClick={handleCloseAssign}
+                sx={sx.backButtonSx}
               >
                 Back
               </Button>
-
-            </Stack>
+            </Box>
           </Box>
+
         </Box>
       </Drawer>
     </Box>

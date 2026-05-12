@@ -6,9 +6,10 @@ import axiosInstance from "../api/axiosInstance";
 import { ENDPOINTS } from "../api/apiConfig";
 
 const handleError = (error, fallbackMessage) => {
-  const message =
-    error.response?.data?.message || error.message || fallbackMessage;
-  throw new Error(message);
+  if (error.response) {
+    throw error;
+  }
+  throw new Error(error.message || fallbackMessage);
 };
 
 // 🔹 PAGINATED + SEARCH
@@ -81,6 +82,15 @@ export const deleteProject = async (id) => {
     return true;
   } catch (error) {
     handleError(error, "Failed to delete project");
+  }
+};
+
+export const softDeleteProject = async (id) => {
+  try {
+    await axiosInstance.delete(ENDPOINTS.softDeleteProject(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to soft delete project");
   }
 };
 

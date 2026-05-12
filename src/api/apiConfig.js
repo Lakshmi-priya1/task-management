@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   getTaskById: (id) => `/tasks/${id}`,
   updateTask: (id) => `/tasks/update/${id}`,
   deleteTask: (id) => `/tasks/delete/${id}`,
+  softDeleteTask: (id) => `/tasks/soft-delete/${id}`,
 
   // EMPLOYEES
   addEmployee: `/employees/add`,
@@ -17,6 +18,7 @@ export const ENDPOINTS = {
   getEmployeeById: (id) => `/employees/${id}`,
   updateEmployee: (id) => `/employees/update/${id}`,
   deleteEmployee: (id) => `/employees/delete/${id}`,
+  softDeleteEmployee: (id) => `/employees/soft-delete/${id}`,
 
   // PROJECTS
   addProject: `/projects/add`,
@@ -24,6 +26,7 @@ export const ENDPOINTS = {
   getProjectById: (id) => `/projects/${id}`,
   updateProject: (id) => `/projects/update/${id}`,
   deleteProject: (id) => `/projects/delete/${id}`,
+  softDeleteProject: (id) => `/projects/soft-delete/${id}`,
 
   assignEmployeeToProject: (projectId, employeeId) =>
     `/projects/${projectId}/employees/${employeeId}`,
@@ -39,6 +42,7 @@ export const ENDPOINTS = {
     `/milestones/project/${projectId}`,
   updateMilestone: (id) => `/milestones/update/${id}`,
   deleteMilestone: (id) => `/milestones/delete/${id}`,
+  softDeleteMilestone: (id) => `/milestones/soft-delete/${id}`,
 
   // TASKS
 assignTaskToEmployee: (taskId, employeeId) =>
@@ -49,4 +53,10 @@ unassignTaskFromEmployee: (taskId, employeeId) =>
 
 getTasksByMilestone: (milestoneId) =>
   `/tasks/milestone/${milestoneId}`,
+
+assignEmployeeToMilestone: (milestoneId, employeeId) =>
+  `/milestones/${milestoneId}/assign/${employeeId}`,
+
+unassignEmployeeFromMilestone: (milestoneId, employeeId) =>
+  `/milestones/${milestoneId}/unassign/${employeeId}`,
 };

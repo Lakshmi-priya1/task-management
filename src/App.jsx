@@ -11,8 +11,10 @@ import Users from "./pages/Users";
 import Employee from "./pages/Employee";
 import Project from "./pages/Project";
 import MileStone from "./pages/MileStone";
+import Hierarchy from "./pages/Hierarchy";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode: "light" });
@@ -20,9 +22,93 @@ export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode:
 export default function App() {
   const [mode, setMode] = useState("light");
 
-  const theme = createTheme({ palette: { mode } });
+  const theme = createTheme({
+    palette: { mode },
+    components: {
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderRadius: "16px",
+            background: theme.palette.mode === "dark"
+              ? "rgba(255,255,255,0.05)"
+              : "rgba(255,255,255,0.75)",
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.mode === "dark" ? "#6366f1" : "#8b5cf6",
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#6366f1",
+            },
+          }),
+          notchedOutline: ({ theme }) => ({
+            borderColor: theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
+          }),
+          input: ({ theme }) => ({
+            color: theme.palette.mode === "dark" ? "#e2e8f0" : "#1e293b",
+            "&::placeholder": {
+              color: theme.palette.mode === "dark" ? "#64748b" : "#94a3b8",
+              opacity: 1,
+            },
+          }),
+        },
+      },
+      MuiInputAdornment: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            color: theme.palette.mode === "dark" ? "#6366f1" : "#8b5cf6",
+          }),
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          icon: ({ theme }) => ({
+            color: theme.palette.mode === "dark" ? "#6366f1" : "#8b5cf6",
+          }),
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            backgroundImage: "none",
+            backgroundColor: theme.palette.mode === "dark" ? "#1a1a2e" : undefined,
+          }),
+        },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderColor: theme.palette.mode === "dark" ? "#2d2d4e" : undefined,
+          }),
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            backgroundImage: "none",
+            backgroundColor: theme.palette.mode === "dark" ? "#1a1a2e" : undefined,
+          }),
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            backgroundImage: "none",
+            backgroundColor: theme.palette.mode === "dark" ? "#13131f" : undefined,
+          }),
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            backgroundImage: "none",
+            backgroundColor: theme.palette.mode === "dark" ? "#1a1a2e" : undefined,
+          }),
+        },
+      },
+    },
+  });
 
   const toggleColorMode = () => setMode((prev) => (prev === "light" ? "dark" : "light"));
+  
 
   return (
     <ColorModeContext.Provider value={{ toggleColorMode, mode }}>
@@ -39,6 +125,7 @@ export default function App() {
               <Route path="employee" element={<Employee />} />
               <Route path="project" element={<Project />} />
               <Route path="milestone" element={<MileStone />} />
+              <Route path="hierarchy" element={<Hierarchy />} />
               <Route path="change-password" element={<ChangePassword />} />
             </Route>
           </Routes>

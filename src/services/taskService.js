@@ -6,9 +6,10 @@ import axiosInstance from "../api/axiosInstance";
 import { BASE_URL, ENDPOINTS } from "../api/apiConfig";
 
 const handleError = (error, fallbackMessage) => {
-  const message =
-    error.response?.data?.message || error.message || fallbackMessage;
-  throw new Error(message);
+  if (error.response) {
+    throw error;
+  }
+  throw new Error(error.message || fallbackMessage);
 };
 
 export const getAllTasks = async () => {
@@ -73,6 +74,15 @@ export const deleteTask = async (id) => {
     return true;
   } catch (error) {
     handleError(error, "Failed to delete task");
+  }
+};
+
+export const softDeleteTask = async (id) => {
+  try {
+    await axiosInstance.delete(ENDPOINTS.softDeleteTask(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to soft delete task");
   }
 };
 

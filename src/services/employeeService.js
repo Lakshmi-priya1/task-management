@@ -2,11 +2,10 @@ import axiosInstance from "../api/axiosInstance";
 import { BASE_URL, ENDPOINTS } from "../api/apiConfig";
 
 const handleError = (error, fallbackMessage) => {
-  const message =
-    error.response?.data?.message ||
-    error.message ||
-    fallbackMessage;
-  throw new Error(message);
+  if (error.response) {
+    throw error;
+  }
+  throw new Error(error.message || fallbackMessage);
 };
 
 export const getEmployees = async ({
@@ -69,5 +68,13 @@ export const deleteEmployee = async (id) => {
     return true;
   } catch (error) {
     handleError(error, "Failed to delete employee");
+  }
+};
+
+export const softDeleteEmployee = async (id) => {
+  try {    await axiosInstance.delete(ENDPOINTS.softDeleteEmployee(id));
+    return true;
+  } catch (error) {
+    handleError(error, "Failed to soft delete employee");
   }
 };
