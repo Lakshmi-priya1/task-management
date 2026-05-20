@@ -1,4 +1,3 @@
-// hooks/useMilestone.js
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
@@ -22,13 +21,19 @@ import {
 
 import { getProjectById } from "../services/projectService";
 
+import {
+  parseValidationErrors,
+  hasFieldErrors,
+} from "../utils/validationErrorHandler";
+
 export const Toast = Swal.mixin({
   toast: true, position: "top-end",
   showConfirmButton: false, timer: 2500,
   didOpen: (toast) => { toast.style.marginTop = "70px"; },
 });
 
-export const MILESTONE_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+export const MILESTONE_STATUSES  = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+export const MAX_VISIBLE_CHIPS   = 4;
 
 export const emptyForm = {
   milestoneName: "", description: "",
@@ -40,38 +45,55 @@ export function useMilestone() {
 
   // ── Redux state ──────────────────────────────────────
   const {
-    list: milestones,
-    projects,
-    employees,
-    tasks,
-    selected,
-    loading,
-    totalPages,
-    keyword,
-    projectFilter,
-    page,
+    list: milestones, projects, employees, tasks,
+    selected, loading, totalPages, keyword, projectFilter, page,
   } = useSelector((state) => state.milestones);
 
-  // ── Local UI state ───────────────────────────────────
+  // ── Form / modal state ───────────────────────────────
   const [editing,   setEditing]   = useState(null);
   const [form,      setForm]      = useState(emptyForm);
   const [modalOpen, setModalOpen] = useState(false);
-  const [viewOpen,  setViewOpen]  = useState(false);
+  const [errors,    setErrors]    = useState({});
 
-  // assign drawer
+  // ── View drawer state ────────────────────────────────
+  const [viewOpen, setViewOpen] = useState(false);
+
+  // ── Assign drawer state ──────────────────────────────
   const [assignDrawerOpen,    setAssignDrawerOpen]    = useState(false);
   const [selectedMilestone,   setSelectedMilestone]   = useState(null);
   const [assignedEmployeeIds, setAssignedEmployeeIds] = useState([]);
   const [selectEmployeeId,    setSelectEmployeeId]    = useState("");
   const [projectMembers,      setProjectMembers]      = useState([]);
-  // assignSuccess is now: null | { message: string, type: "success" | "error" }
   const [assignSuccess,       setAssignSuccess]       = useState(null);
+
+  // ── Chip toggle state ────────────────────────────────
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!assignDrawerOpen) setShowAll(false);
+  }, [assignDrawerOpen]);
+
+  const visibleChips = showAll
+    ? assignedEmployeeIds
+    : assignedEmployeeIds.slice(0, MAX_VISIBLE_CHIPS);
+
+  const hiddenCount = assignedEmployeeIds.length - MAX_VISIBLE_CHIPS;
+
+  // ── Derived ──────────────────────────────────────────
+  const availableMembers = employees.filter(
+    (e) =>
+      projectMembers.map(String).includes(String(e.employeeId)) &&
+      !assignedEmployeeIds.map(String).includes(String(e.employeeId))
+  );
 
   // ── Reset form ───────────────────────────────────────
   const resetForm = useCallback(() => {
     setEditing(null);
     setForm(emptyForm);
   }, []);
+
+  const clearErrors = () => setErrors({});
 
   // ── Fetch on filter / page change ────────────────────
   useEffect(() => {
@@ -88,10 +110,20 @@ export function useMilestone() {
   // ── Submit ───────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.projectId) {
-      Toast.fire({ icon: "error", title: "Project is required" });
+    clearErrors();
+
+    // ── Frontend validation ──────────────────────────
+    const frontendErrors = {};
+    if (!form.projectId)             frontendErrors.projectId     = "Project is required";
+    if (!form.milestoneName?.trim()) frontendErrors.milestoneName = "Milestone name is required";
+    if (!form.description?.trim())   frontendErrors.description   = "Description is required";
+    if (!form.dueDate)               frontendErrors.dueDate       = "Due date is required";
+
+    if (Object.keys(frontendErrors).length > 0) {
+      setErrors(frontendErrors);
       return;
     }
+
     const payload = {
       ...form,
       projectId: Number(form.projectId),
@@ -104,23 +136,33 @@ export function useMilestone() {
       const result = await dispatch(updateMilestoneThunk({ id: editing.milestoneId, data: payload }));
       if (updateMilestoneThunk.fulfilled.match(result)) {
         Toast.fire({ icon: "success", title: "Updated" });
+        setModalOpen(false);
+        resetForm();
+        dispatch(fetchMilestones({ keyword, projectId: projectFilter, page }));
       } else {
-        Toast.fire({ icon: "error", title: result.payload || "Update failed" });
-        return;
+        const fieldErrors = parseValidationErrors(result.payload);
+        if (hasFieldErrors(fieldErrors)) {
+          setErrors(fieldErrors);
+        } else {
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Update failed" });
+        }
       }
     } else {
       const result = await dispatch(addMilestoneThunk(payload));
       if (addMilestoneThunk.fulfilled.match(result)) {
         Toast.fire({ icon: "success", title: "Added" });
+        setModalOpen(false);
+        resetForm();
+        dispatch(fetchMilestones({ keyword, projectId: projectFilter, page }));
       } else {
-        Toast.fire({ icon: "error", title: result.payload || "Add failed" });
-        return;
+        const fieldErrors = parseValidationErrors(result.payload);
+        if (hasFieldErrors(fieldErrors)) {
+          setErrors(fieldErrors);
+        } else {
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Add failed" });
+        }
       }
     }
-
-    setModalOpen(false);
-    resetForm();
-    dispatch(fetchMilestones({ keyword, projectId: projectFilter, page }));
   };
 
   // ── Delete ───────────────────────────────────────────
@@ -148,6 +190,7 @@ export function useMilestone() {
   // ── Edit ─────────────────────────────────────────────
   const handleEdit = (row) => {
     setEditing(row);
+    clearErrors();
     setForm({
       milestoneName: row.milestoneName || "",
       description:   row.description   || "",
@@ -158,15 +201,15 @@ export function useMilestone() {
     setModalOpen(true);
   };
 
-  // ── Assign drawer — open ─────────────────────────────
+  // ── Open assign drawer ───────────────────────────────
   const openAssignDrawer = async (milestone) => {
     setSelectedMilestone(milestone);
     setSelectEmployeeId("");
-    setAssignSuccess(null); // reset to null
-    setAssignedEmployeeIds(milestone.employeeIds?.map(Number) || []);
+    setAssignSuccess(null);
+    setAssignedEmployeeIds((milestone.employeeIds || []).map(String));
     try {
       const project = await getProjectById(milestone.projectId);
-      setProjectMembers(project?.employeeIds?.map(Number) || []);
+      setProjectMembers((project?.employeeIds || []).map(String));
       setAssignDrawerOpen(true);
     } catch {
       Toast.fire({ icon: "error", title: "Failed to load project members" });
@@ -183,14 +226,12 @@ export function useMilestone() {
       })
     );
     if (assignEmployeeToMilestoneThunk.fulfilled.match(result)) {
-      const newId = Number(selectEmployeeId);
-      setAssignedEmployeeIds((prev) => (prev.includes(newId) ? prev : [...prev, newId]));
-
-      const emp  = employees.find((e) => Number(e.employeeId) === newId);
+      setAssignedEmployeeIds((prev) =>
+        prev.map(String).includes(String(selectEmployeeId)) ? prev : [...prev, String(selectEmployeeId)]
+      );
+      const emp  = employees.find((e) => String(e.employeeId) === String(selectEmployeeId));
       const name = emp ? `${emp.firstName} ${emp.lastName || ""}`.trim() : "Employee";
-
       setSelectEmployeeId("");
-      // ✅ Object with type "success" — no Toast
       setAssignSuccess({ message: `${name} assigned successfully`, type: "success" });
       dispatch(fetchMilestones({ keyword, projectId: projectFilter, page }));
     } else {
@@ -208,11 +249,9 @@ export function useMilestone() {
       })
     );
     if (unassignEmployeeFromMilestoneThunk.fulfilled.match(result)) {
-      const emp  = employees.find((e) => Number(e.employeeId) === Number(employeeId));
+      const emp  = employees.find((e) => String(e.employeeId) === String(employeeId));
       const name = emp ? `${emp.firstName} ${emp.lastName || ""}`.trim() : "Employee";
-
-      setAssignedEmployeeIds((prev) => prev.filter((id) => id !== Number(employeeId)));
-      // ✅ Object with type "error" (red) — no Toast
+      setAssignedEmployeeIds((prev) => prev.filter((id) => String(id) !== String(employeeId)));
       setAssignSuccess({ message: `${name} removed`, type: "error" });
       dispatch(fetchMilestones({ keyword, projectId: projectFilter, page }));
     } else {
@@ -220,53 +259,34 @@ export function useMilestone() {
     }
   };
 
-  const availableMembers = employees.filter(
-    (e) =>
-      projectMembers.includes(Number(e.employeeId)) &&
-      !assignedEmployeeIds.includes(Number(e.employeeId))
-  );
-
-  const closeViewDrawer = () => {
-    setViewOpen(false);
-    dispatch(clearSelected());
-  };
-
-  const closeAssignDrawer = () => {
-    setAssignDrawerOpen(false);
-    setAssignSuccess(null); // reset on close
-  };
-
-  const openAddModal = () => {
-    resetForm();
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    resetForm();
-  };
+  // ── Close helpers ────────────────────────────────────
+  const openAddModal      = () => { resetForm(); clearErrors(); setModalOpen(true); };
+  const closeModal        = () => { setModalOpen(false); resetForm(); clearErrors(); };
+  const closeViewDrawer   = () => { setViewOpen(false); dispatch(clearSelected()); };
+  const closeAssignDrawer = () => { setAssignDrawerOpen(false); setAssignSuccess(null); };
 
   return {
-    // redux state
+    // redux
     milestones, projects, employees, tasks, selected,
     loading, totalPages, keyword, projectFilter, page,
-    // dispatch helpers
     setKeyword:       (val) => dispatch(setKeyword(val)),
     setProjectFilter: (val) => dispatch(setProjectFilter(val)),
     setPage:          (val) => dispatch(setPage(val)),
-    // form state
-    editing, form, setForm,
-    // modal state
+    // form
+    editing, form, setForm, errors,
+    // modal
     modalOpen, openAddModal, closeModal,
-    // view drawer state
+    // view drawer
     viewOpen, handleView, closeViewDrawer,
-    // assign drawer state
+    // assign drawer
     assignDrawerOpen, closeAssignDrawer,
     selectedMilestone,
     assignedEmployeeIds,
     selectEmployeeId, setSelectEmployeeId,
     assignSuccess, setAssignSuccess,
     availableMembers,
+    // chip toggle
+    showAll, setShowAll, visibleChips, hiddenCount,
     // handlers
     handleSubmit, handleDelete, handleEdit,
     openAssignDrawer, handleAssign, handleUnassign,

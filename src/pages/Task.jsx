@@ -1,10 +1,11 @@
+import { useState } from "react";
 import {
   Box, Button, Typography, TextField,
   InputAdornment, Select, MenuItem, FormControl, Card,
   Chip, Drawer, IconButton, Divider,
 } from "@mui/material";
 import {
-  AddRounded, SearchRounded, FlagRounded, FilterListRounded,
+  AddRounded, SearchRounded, FilterListRounded, TaskRounded,
   PersonAddRounded, CloseRounded, ArrowBackRounded,
   CheckCircleRounded, RemoveCircleRounded,
 } from "@mui/icons-material";
@@ -15,41 +16,66 @@ import DataTable  from "../components/DataTable";
 import FormModal  from "../components/FormModal";
 import ViewDrawer from "../components/ViewDrawer";
 
-import { useMilestone, MILESTONE_STATUSES } from "../hooks/useMilestone";
-import { milestoneStyles as s }             from "../styles/milestoneStyles";
+import { useTask, TASK_STATUSES, TASK_PRIORITIES } from "../hooks/useTask";
+import { taskStyles as s }                         from "../styles/taskStyles";
 
 // ─── Role constants ────────────────────────────────────────────────────────────
 const ADMIN    = "ADMIN";
 const PM       = "PROJECT_MANAGER";
 const LEAD     = "TEAM_LEAD";
-// EMPLOYEE is view-only for milestones
+const EMPLOYEE = "EMPLOYEE";
 
-export default function Milestone() {
+export default function Task() {
   const theme  = useTheme();
   const isDark = theme.palette.mode === "dark";
 
   // ─── Role guards ──────────────────────────────────────────────────────────────
   const { role } = useSelector((state) => state.auth);
-  const canWrite  = role === ADMIN || role === PM || role === LEAD; // add / edit / assign
-  const canDelete = role === ADMIN || role === PM;                  // LEAD cannot delete
+  const isEmployee = role === EMPLOYEE;
+  const canWrite   = role === ADMIN || role === PM || role === LEAD;
+
+  // ─── Status-only modal state (for EMPLOYEE role) ───────────────────────────
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusForm,      setStatusForm]      = useState({});
+
+  const openStatusOnlyModal = (item) => {
+    setStatusForm({
+      id:          item.id,
+      title:       item.title,
+      description: item.description,
+      status:      item.status,
+    });
+    setStatusModalOpen(true);
+  };
+  const closeStatusModal = () => setStatusModalOpen(false);
 
   const {
-    milestones, projects, employees, tasks, selected,
-    loading, totalPages, keyword, projectFilter, page,
-    setKeyword, setProjectFilter, setPage,
-    editing, form, setForm,
+    projects, employees,
+    loading, totalPages, keyword, status, page,
+    setKeyword, setStatus, setPage,
+    enrichedTasks, filteredMilestones, availableMembers,
+    editing, form, setForm,errors,
     modalOpen, openAddModal, closeModal,
-    viewOpen, handleView, closeViewDrawer,
+    viewOpen, selected, handleView, closeViewDrawer,
+    getSelectedEmployeeLabel, getSelectedProjectName, getSelectedMilestoneName,
     assignDrawerOpen, closeAssignDrawer,
-    selectedMilestone,
-    assignedEmployeeIds,
-    selectEmployeeId, setSelectEmployeeId,
+    selectedTask, assignedEmployeeIds,
+    assignEmployeeId, setAssignEmployeeId,
     assignSuccess, setAssignSuccess,
-    availableMembers,errors,
     showAll, setShowAll, visibleChips, hiddenCount,
     handleSubmit, handleDelete, handleEdit,
     openAssignDrawer, handleAssign, handleUnassign,
-  } = useMilestone();
+    // updateTaskStatus should be exposed from useTask — see note below
+    updateTaskStatus,
+  } = useTask();
+
+  // ─── Employee status submit ────────────────────────────────────────────────
+  const handleStatusSubmit = async () => {
+    if (updateTaskStatus) {
+      await updateTaskStatus(statusForm.id, statusForm.status);
+    }
+    closeStatusModal();
+  };
 
   const isSuccess = assignSuccess?.type === "success";
 
@@ -58,7 +84,7 @@ export default function Milestone() {
       {/* TOOLBAR */}
       <Box sx={s.toolbar}>
         <TextField
-          size="small" placeholder="Search milestone..."
+          size="small" placeholder="Search task..."
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           sx={s.searchInput}
@@ -69,26 +95,26 @@ export default function Milestone() {
           }}
         />
 
-        <FormControl size="small" sx={s.projectFilterControl}>
+        <FormControl size="small" sx={s.statusFilterControl}>
           <Select
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
             displayEmpty
             startAdornment={
               <InputAdornment position="start"><FilterListRounded /></InputAdornment>
             }
           >
-            <MenuItem value="">All Projects</MenuItem>
-            {projects.map((p) => (
-              <MenuItem key={p.projectId} value={p.projectId}>{p.projectName}</MenuItem>
+            <MenuItem value="">All Status</MenuItem>
+            {TASK_STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>{s}</MenuItem>
             ))}
           </Select>
         </FormControl>
 
-        {/* ADMIN, PM, LEAD can add milestones */}
+        {/* EMPLOYEE cannot add tasks */}
         {canWrite && (
           <Button startIcon={<AddRounded />} onClick={openAddModal} sx={s.addButton}>
-            Add Milestone
+            Add Task
           </Button>
         )}
       </Box>
@@ -96,25 +122,26 @@ export default function Milestone() {
       {/* TABLE */}
       <Card sx={s.tableCard}>
         <Box sx={s.tableCardHeader(isDark)}>
-          <FlagRounded sx={s.flagIcon} />
-          <Typography sx={s.tableCardTitle(isDark)}>Milestone List</Typography>
+          <TaskRounded sx={s.taskIcon} />
+          <Typography sx={s.tableCardTitle(isDark)}>Task List</Typography>
         </Box>
         <DataTable
-          data={milestones}
-          columns={["Name", "Project", "Status", "Due Date"]}
-          fields={["milestoneName", "projectName", "status", "dueDate"]}
-          idField="milestoneId"
+          data={enrichedTasks}
+          columns={["Title", "Project", "Milestone", "Status", "Due Date"]}
+          fields={["title", "projectName", "milestoneName", "status", "dueDate"]}
+          idField="id"
           loading={loading}
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
           handleDelete={handleDelete}
           handleView={handleView}
-          handleEdit={handleEdit}
+          // EMPLOYEE gets status-only edit; everyone else gets full edit
+          handleEdit={isEmployee ? openStatusOnlyModal : handleEdit}
           // ─── Role guards ───────────────────────────────────────────────
-          hideEdit={!canWrite}           // EMPLOYEE sees no edit
-          hideDelete={!canDelete}        // LEAD + EMPLOYEE see no delete
-          hideExtraActions={!canWrite}   // EMPLOYEE sees no Assign
+          hideEdit={false}                 // edit button always shown — but behaviour differs
+          hideDelete={!canWrite}           // EMPLOYEE cannot delete
+          hideExtraActions={!canWrite}     // EMPLOYEE cannot assign
           // ──────────────────────────────────────────────────────────────
           extraActions={[
             {
@@ -122,7 +149,7 @@ export default function Milestone() {
               icon: <PersonAddRounded sx={{ fontSize: 16 }} />,
               color: "#0891b2",
               bg: "rgba(8,145,178,0.07)",
-              onClick: (_id, row) => openAssignDrawer(row),
+              onClick: (_id, item) => openAssignDrawer(item),
             },
           ]}
         />
@@ -132,73 +159,77 @@ export default function Milestone() {
       <ViewDrawer
         isOpen={viewOpen}
         onClose={closeViewDrawer}
-        title="Milestone Details"
+        title="Task Details"
         status={selected?.status}
         sections={
           selected ? [
             {
-              heading: "Info",
+              heading: "Task Info",
               fields: [
-                { label: "Name",        value: selected.milestoneName },
+                { label: "Title",       value: selected.title },
                 { label: "Description", value: selected.description },
-                { label: "Status",      value: selected.status, badge: true },
+                { label: "Status",      value: selected.status,   badge: true },
+                { label: "Priority",    value: selected.priority, badge: true },
                 { label: "Due Date",    value: selected.dueDate?.split("T")[0] || "—" },
-                {
-                  label: "Project",
-                  value: projects.find(
-                    (p) => Number(p.projectId) === Number(selected.projectId)
-                  )?.projectName || "—",
-                },
+              ],
+            },
+            {
+              heading: "Project & Milestone",
+              fields: [
+                { label: "Project",   value: getSelectedProjectName() },
+                { label: "Milestone", value: getSelectedMilestoneName() },
               ],
             },
             {
               heading: "Assigned Employees",
-              fields: selected.employeeIds?.length
-                ? selected.employeeIds.map((id, i) => ({
-                    label: selected.employeeNames?.[i] || `Employee #${id}`,
-                    value: "Assigned", badge: true,
-                  }))
-                : [{ label: "No employees assigned", value: "—" }],
-            },
-            {
-              heading: "Tasks",
-              fields: tasks.filter(
-                (t) => Number(t.milestoneId) === Number(selected.milestoneId)
-              ).length
-                ? tasks
-                    .filter((t) => Number(t.milestoneId) === Number(selected.milestoneId))
-                    .map((t) => ({ label: t.title, value: t.status, badge: true }))
-                : [{ label: "No tasks yet", value: "—" }],
+              fields: [{ label: "Employees", value: getSelectedEmployeeLabel() }],
             },
           ] : []
         }
       />
 
-      {/* FORM MODAL — only for ADMIN, PM, LEAD */}
+      {/* FULL FORM MODAL — ADMIN / PM / LEAD only */}
       {canWrite && (
         <FormModal
           isOpen={modalOpen}
           handleClose={closeModal}
-          title={editing ? "Edit Milestone" : "Add Milestone"}
-          subtitle={editing ? "Update milestone details" : "Fill in the details to add a milestone"}
+          title={editing ? "Edit Task" : "Add Task"}
+          subtitle={editing ? "Update task details" : "Fill in the details to create a task"}
           formData={form}
           setFormData={setForm}
           handleSubmit={handleSubmit}
           errors={errors}
-          submitLabel={editing ? "Save changes" : "Add milestone"}
+          submitLabel={editing ? "Save changes" : "Add task"}
           sections={[
             {
-              label: "Milestone info",
+              label: "Task info",
               fields: [
-                { name: "milestoneName", label: "Milestone name", type: "text" },
-                { name: "description",   label: "Description",    type: "text", multiline: true, rows: 2 },
+                { name: "title",       label: "Title",       type: "text" },
+                { name: "description", label: "Description", type: "text", multiline: true, rows: 2 },
                 {
-                  name: "projectId", label: "Project", type: "select", half: true,
+                  name: "projectId", label: "Project", type: "select",
                   options: projects.map((p) => ({ value: Number(p.projectId), label: p.projectName })),
                 },
                 {
+                  name: "milestoneId", label: "Milestone", type: "select",
+                  options: filteredMilestones.map((m) => ({ value: Number(m.milestoneId), label: m.milestoneName })),
+                },
+              ],
+            },
+            {
+              label: "Details",
+              fields: [
+                {
                   name: "status", label: "Status", type: "select", half: true,
-                  options: MILESTONE_STATUSES,
+                  options: [
+                    { value: "PENDING",     label: "Pending" },
+                    { value: "IN_PROGRESS", label: "In progress" },
+                    { value: "COMPLETED",   label: "Completed" },
+                  ],
+                },
+                {
+                  name: "priority", label: "Priority", type: "select", half: true,
+                  options: TASK_PRIORITIES.map((p) => ({ value: p, label: p[0] + p.slice(1).toLowerCase() })),
                 },
                 { name: "dueDate", label: "Due date", type: "date" },
               ],
@@ -207,7 +238,38 @@ export default function Milestone() {
         />
       )}
 
-      {/* ASSIGN DRAWER — only for ADMIN, PM, LEAD */}
+      {/* STATUS-ONLY MODAL — EMPLOYEE role only */}
+      {isEmployee && (
+        <FormModal
+          isOpen={statusModalOpen}
+          handleClose={closeStatusModal}
+          title="Update Task Status"
+          subtitle="You can only update the status of your task"
+          formData={statusForm}
+          setFormData={setStatusForm}
+          handleSubmit={handleStatusSubmit}
+          submitLabel="Update Status"
+          sections={[
+            {
+              label: "Task info",
+              fields: [
+                { name: "title",       label: "Title",       type: "text",   disabled: true },
+                { name: "description", label: "Description", type: "text",   multiline: true, rows: 2, disabled: true },
+                {
+                  name: "status", label: "Status", type: "select",
+                  options: [
+                    { value: "PENDING",     label: "Pending" },
+                    { value: "IN_PROGRESS", label: "In progress" },
+                    { value: "COMPLETED",   label: "Completed" },
+                  ],
+                },
+              ],
+            },
+          ]}
+        />
+      )}
+
+      {/* ASSIGN DRAWER — ADMIN / PM / LEAD only */}
       {canWrite && (
         <Drawer
           anchor="right"
@@ -219,7 +281,7 @@ export default function Milestone() {
               width: 420, maxWidth: 420,
               backgroundColor: isDark ? "#13131f" : "#faf9ff",
               display: "flex", flexDirection: "column",
-              overflow: "hidden",
+              overflow: "hidden", overflowX: "hidden",
             },
           }}
         >
@@ -229,7 +291,7 @@ export default function Milestone() {
             <Box sx={s.drawerHeader}>
               <Box>
                 <Typography sx={s.drawerTitle}>Assign Team</Typography>
-                <Typography sx={s.drawerSubtitle}>{selectedMilestone?.milestoneName}</Typography>
+                <Typography sx={s.drawerSubtitle}>{selectedTask?.title}</Typography>
               </Box>
               <IconButton onClick={closeAssignDrawer}><CloseRounded /></IconButton>
             </Box>
@@ -289,8 +351,8 @@ export default function Milestone() {
                 ) : (
                   <FormControl fullWidth>
                     <Select
-                      value={selectEmployeeId}
-                      onChange={(e) => setSelectEmployeeId(e.target.value)}
+                      value={assignEmployeeId}
+                      onChange={(e) => setAssignEmployeeId(e.target.value)}
                       displayEmpty
                     >
                       <MenuItem value="">Select Employee</MenuItem>
@@ -331,7 +393,7 @@ export default function Milestone() {
                 fullWidth variant="contained"
                 startIcon={<PersonAddRounded />}
                 onClick={handleAssign}
-                disabled={!selectEmployeeId}
+                disabled={!assignEmployeeId}
                 sx={s.assignButton}
               >
                 Assign Employee
@@ -340,7 +402,7 @@ export default function Milestone() {
                 fullWidth variant="outlined"
                 startIcon={<ArrowBackRounded />}
                 onClick={closeAssignDrawer}
-                sx={{ ...s.closeButton, mt: 1.5 }}
+                sx={{ ...s.backButton, mt: 1.5 }}
               >
                 Back
               </Button>

@@ -3,8 +3,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
-
 import { loginThunk } from "../store/slices/authSlice";
+
+const ROLE_ROUTES = {
+  ADMIN:           "/admin/dashboard",
+  PROJECT_MANAGER: "/pm/dashboard",
+  TEAM_LEAD:       "/lead/dashboard",
+  EMPLOYEE:        "/employee/dashboard",
+};
 
 const showToast = (msg, type = "success") =>
   Swal.fire({
@@ -18,8 +24,8 @@ export function useLogin() {
   const dispatch    = useDispatch();
   const { loading } = useSelector((state) => state.auth);
 
-  const [form, setForm]             = useState({ email: "", password: "", remember: false });
-  const [errors, setErrors]         = useState({});
+  const [form, setForm]         = useState({ email: "", password: "", remember: false });
+  const [errors, setErrors]     = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -39,10 +45,21 @@ export function useLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     const result = await dispatch(loginThunk(form));
+
     if (loginThunk.fulfilled.match(result)) {
-      showToast("Welcome back!");
-      navigate("/dashboard");
+      const role = result.payload.role;
+      const route = ROLE_ROUTES[role] ?? "/dashboard"; // fallback just in case
+
+      await Swal.fire({
+        toast: true, position: "top-end",
+        icon: "success", title: "Welcome back!",
+        showConfirmButton: false,
+        timer: 2200, timerProgressBar: true,
+      });
+
+      navigate(route);
     } else {
       showToast(result.payload || "Invalid email or password", "error");
     }

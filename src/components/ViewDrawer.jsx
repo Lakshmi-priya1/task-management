@@ -4,14 +4,19 @@ import { Close, TaskAltRounded, AssignmentLateRounded } from "@mui/icons-materia
 import { useTheme } from "@mui/material/styles";
 
 const colorMap = {
-  ACTIVE:      { bg: "#dcfce7", color: "#16a34a" },
-  INACTIVE:    { bg: "#fef2f2", color: "#b91c1c" },
-  PENDING:     { bg: "#fffbeb", color: "#b45309" },
-  COMPLETED:   { bg: "#f0fdf4", color: "#10b981" },
-  IN_PROGRESS: { bg: "#eff6ff", color: "#1d4ed8" },
-  LOW:         { bg: "#f0fdfa", color: "#0f766e" },
-  MEDIUM:      { bg: "#fdf4ff", color: "#7e22ce" },
-  HIGH:        { bg: "#fff1f2", color: "#be123c" },
+  ACTIVE:           { bg: "#dcfce7", color: "#16a34a" },
+  INACTIVE:         { bg: "#fef2f2", color: "#b91c1c" },
+  PENDING:          { bg: "#fffbeb", color: "#b45309" },
+  COMPLETED:        { bg: "#f0fdf4", color: "#10b981" },
+  IN_PROGRESS:      { bg: "#eff6ff", color: "#1d4ed8" },
+  LOW:              { bg: "#f0fdfa", color: "#0f766e" },
+  MEDIUM:           { bg: "#fdf4ff", color: "#7e22ce" },
+  HIGH:             { bg: "#fff1f2", color: "#be123c" },
+  // roles
+  ADMIN:            { bg: "#fef3c7", color: "#d97706" },
+  PROJECT_MANAGER:  { bg: "#ede9fe", color: "#7c3aed" },
+  TEAM_LEAD:        { bg: "#dbeafe", color: "#1d4ed8" },
+  EMPLOYEE:         { bg: "#dcfce7", color: "#16a34a" },
 };
 
 export default function ViewDrawer({ isOpen, onClose, title, status, sections = [], footer }) {
@@ -40,12 +45,13 @@ export default function ViewDrawer({ isOpen, onClose, title, status, sections = 
   if (!isOpen) return null;
 
   const renderBadge = (value) => {
-    const s = String(value || "").toUpperCase();
+    const s = String(value || "").toUpperCase().replace(" ", "_");
     const style = colorMap[s] || { bg: isDark ? "#1e1e2e" : "#f1f5f9", color: isDark ? "#94a3b8" : "#64748b" };
+    const display = String(value || "").replace("_", " ");
     return (
       <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.6, px: 1.5, py: 0.4, borderRadius: "999px", backgroundColor: style.bg, color: style.color, fontSize: 11, fontWeight: 700, letterSpacing: 0.4, whiteSpace: "nowrap" }}>
         <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: style.color }} />
-        {value || "N/A"}
+        {display || "N/A"}
       </Box>
     );
   };
@@ -69,12 +75,13 @@ export default function ViewDrawer({ isOpen, onClose, title, status, sections = 
           <Typography sx={{ fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: 0.2 }}>{title}</Typography>
           <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.65)", mt: 0.4 }}>Viewing full details below</Typography>
           {status && (() => {
-            const s = status.toUpperCase();
+            const s = String(status).toUpperCase().replace(" ", "_");
             const style = colorMap[s] || { color: "#94a3b8" };
+            const display = String(status).replace("_", " ");
             return (
               <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.6, mt: 2, px: 1.8, py: 0.5, borderRadius: "999px", backgroundColor: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", fontSize: 12, fontWeight: 700 }}>
                 <Box sx={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: style.color, boxShadow: `0 0 6px ${style.color}` }} />
-                {status}
+                {display}
               </Box>
             );
           })()}

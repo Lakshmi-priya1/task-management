@@ -10,7 +10,7 @@ axiosInstance.interceptors.request.use((config) => {
   const url = config.url || "";
 
   // Skip auth header for login requests
-  if (token && !url.includes("/admin/login")) {
+  if (token && !url.includes("/auth/login")) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 

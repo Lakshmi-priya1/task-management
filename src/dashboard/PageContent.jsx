@@ -1,169 +1,176 @@
 import React from "react";
+import { Box, Card, CardContent, Typography, Chip } from "@mui/material";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-} from "@mui/material";
-import {
-  AssignmentRounded,
-  CheckCircleRounded,
-  PendingActionsRounded,
-  AutorenewRounded,
+  AssignmentRounded, CheckCircleRounded,
+  PendingActionsRounded, AutorenewRounded, FlagRounded,
 } from "@mui/icons-material";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, CartesianGrid, XAxis, YAxis,
 } from "recharts";
 
 import { useDashboard } from "../hooks/useDashboard";
 import {
   COLORS,
-  heroCardSx,
-  heroContentSx,
-  heroRowSx,
-  greetingTextSx,
-  quoteTextSx,
-  clockBoxSx,
-  clockLabelSx,
-  clockTimeSx,
-  clockDateSx,
-  chipSx,
-  chipRowSx,
-  statsGridSx,
-  statCardSx,
-  statIconBoxSx,
-  statLabelSx,
-  statValueSx,
-  chartsGridSx,
-  chartCardSx,
-  chartTitleSx,
-  chartBoxSx,
-  getStatCards,
+  heroCardSx, heroContentSx, heroRowSx,
+  greetingTextSx, quoteTextSx,
+  clockBoxSx, clockLabelSx, clockTimeSx, clockDateSx,
+  chipSx, chipRowSx,
+  statsGridSx, statCardSx, statIconBoxSx, statLabelSx, statValueSx,
+  chartsGridSx, chartCardSx, chartTitleSx, chartBoxSx,
+  getStatCards, getMilestoneStatCards, getEmployeeStatCards,
 } from "../styles/dashboardStyles";
 
-// Icons paired with each stat card (in order)
-const STAT_ICONS = [
+const TASK_ICONS = [
   <AssignmentRounded />,
   <CheckCircleRounded />,
   <AutorenewRounded />,
   <PendingActionsRounded />,
 ];
 
-export default function PageContent() {
-  const { stats, chartData, quotes, quoteIndex, fade, time, greeting } =
-    useDashboard();
+const MILESTONE_ICONS = [
+  <FlagRounded />,
+  <CheckCircleRounded />,
+  <AssignmentRounded />,
+  <CheckCircleRounded />,
+];
 
-  const statCards = getStatCards(stats);
+function StatCards({ cards, icons }) {
+  return (
+    <Box sx={statsGridSx}>
+      {cards.map((card, i) => (
+        <Card key={i} sx={statCardSx}>
+          <CardContent>
+            <Box sx={statIconBoxSx(card.color)}>{icons[i]}</Box>
+            <Typography sx={statLabelSx}>{card.title}</Typography>
+            <Typography sx={statValueSx}>{card.value}</Typography>
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+  );
+}
+
+function Charts({ data, title1 = "Task Distribution", title2 = "Status Overview" }) {
+  return (
+    <Box sx={chartsGridSx}>
+      <Card sx={chartCardSx}>
+        <Typography sx={chartTitleSx}>{title1}</Typography>
+        <Box sx={chartBoxSx}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie data={data} dataKey="value" outerRadius={110} innerRadius={55}>
+                {data.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </Card>
+      <Card sx={chartCardSx}>
+        <Typography sx={chartTitleSx}>{title2}</Typography>
+        <Box sx={chartBoxSx}>
+          <ResponsiveContainer>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value">
+                {data.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </Card>
+    </Box>
+  );
+}
+
+export default function PageContent() {
+  const {
+    role,
+    taskStats, milestoneStats,
+    taskChartData, milestoneChartData,
+    quotes, quoteIndex, fade, time, greeting,
+  } = useDashboard();
+
+  // Determine stat cards + icons based on role
+  let statCards, statIcons;
+  if (role === "TEAM_LEAD") {
+    statCards = getMilestoneStatCards(milestoneStats, taskStats);
+    statIcons = MILESTONE_ICONS;
+  } else if (role === "EMPLOYEE") {
+    statCards = getEmployeeStatCards(taskStats);
+    statIcons = TASK_ICONS;
+  } else {
+    // ADMIN + PROJECT_MANAGER
+    statCards = getStatCards(taskStats);
+    statIcons = TASK_ICONS;
+  }
+
+  const heroChips =
+    role === "TEAM_LEAD"
+      ? [
+          { label: `${milestoneStats.pending} Milestones Pending` },
+          { label: `${milestoneStats.completed} Milestones Done` },
+        ]
+      : [
+          { label: `${taskStats.pending} Pending` },
+          { label: `${taskStats.completed} Done` },
+        ];
 
   return (
     <Box>
-      {/* ── Hero greeting card ─────────────────────────────────────────── */}
+      {/* Hero greeting card */}
       <Card sx={heroCardSx}>
         <CardContent sx={heroContentSx}>
           <Box sx={heroRowSx}>
-            {/* Left: greeting + quote */}
             <Box>
               <Typography sx={greetingTextSx}>{greeting}</Typography>
-              <Typography sx={quoteTextSx(fade)}>
-                {quotes[quoteIndex]}
-              </Typography>
+              <Typography sx={quoteTextSx(fade)}>{quotes[quoteIndex]}</Typography>
             </Box>
-
-            {/* Right: clock */}
             <Box sx={clockBoxSx}>
               <br />
               <Typography sx={clockLabelSx}>Local Time</Typography>
               <Typography sx={clockTimeSx}>
-                {time.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </Typography>
               <Typography sx={clockDateSx}>
-                {time.toLocaleDateString([], {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
+                {time.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}
               </Typography>
             </Box>
           </Box>
-
-          {/* Status chips */}
           <Box sx={chipRowSx}>
-            <Chip label={`${stats.pending} Pending`} sx={chipSx} />
-            <Chip label={`${stats.completed} Done`}  sx={chipSx} />
+            {heroChips.map((c, i) => (
+              <Chip key={i} label={c.label} sx={chipSx} />
+            ))}
           </Box>
         </CardContent>
       </Card>
 
-      {/* ── Stat cards ─────────────────────────────────────────────────── */}
-      <Box sx={statsGridSx}>
-        {statCards.map((card, i) => (
-          <Card key={i} sx={statCardSx}>
-            <CardContent>
-              <Box sx={statIconBoxSx(card.color)}>{STAT_ICONS[i]}</Box>
-              <Typography sx={statLabelSx}>{card.title}</Typography>
-              <Typography sx={statValueSx}>{card.value}</Typography>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
+      {/* Stat cards */}
+      <StatCards cards={statCards} icons={statIcons} />
 
-      {/* ── Charts ─────────────────────────────────────────────────────── */}
-      <Box sx={chartsGridSx}>
-        {/* Pie chart */}
-        <Card sx={chartCardSx}>
-          <Typography sx={chartTitleSx}>Task Distribution</Typography>
-          <Box sx={chartBoxSx}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  dataKey="value"
-                  outerRadius={110}
-                  innerRadius={55}
-                >
-                  {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+      {/* Charts */}
+      {role === "TEAM_LEAD" ? (
+        <>
+          <Charts
+            data={milestoneChartData}
+            title1="Milestone Distribution"
+            title2="Milestone Status"
+          />
+          <Box sx={{ mt: 2 }}>
+            <Charts
+              data={taskChartData}
+              title1="Task Distribution"
+              title2="Task Status"
+            />
           </Box>
-        </Card>
-
-        {/* Bar chart */}
-        <Card sx={chartCardSx}>
-          <Typography sx={chartTitleSx}>Status Overview</Typography>
-          <Box sx={chartBoxSx}>
-            <ResponsiveContainer>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value">
-                  {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Card>
-      </Box>
+        </>
+      ) : (
+        <Charts data={taskChartData} />
+      )}
     </Box>
   );
 }

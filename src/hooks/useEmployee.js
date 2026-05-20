@@ -1,12 +1,11 @@
 // src/hooks/useEmployee.js
-
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
 
 import {
   fetchEmployees,
-  fetchAllEmployees,        // ← NEW
+  fetchAllEmployees,
   addEmployeeThunk,
   updateEmployeeThunk,
   softDeleteEmployeeThunk,
@@ -15,7 +14,10 @@ import {
   setDepartment,
   setPage,
   clearSelected,
+  setSelectedEmployee,
 } from "../store/slices/employeeSlice";
+
+import { getOrganizations } from "../services/organizationService";
 
 import {
   parseValidationErrors,
@@ -41,15 +43,19 @@ export const emptyForm = {
   phoneNumber: "",
   department: "",
   status: "ACTIVE",
+  role: "EMPLOYEE",
+  companyName: "",   // ✅ store company name (human-readable)
+  orgId: "",         // ✅ store orgId (sent to backend)
 };
+
+export const EMPLOYEE_ROLES = ["PROJECT_MANAGER", "TEAM_LEAD", "EMPLOYEE"];
 
 export function useEmployee() {
   const dispatch = useDispatch();
 
-  // ── Redux State ──────────────────────────────────────
   const {
     list: employees,
-    allEmployees,             // ← NEW: full unfiltered list
+    allEmployees,
     loading,
     totalPages,
     keyword,
@@ -58,53 +64,54 @@ export function useEmployee() {
     selectedEmployee,
   } = useSelector((state) => state.employees);
 
-  // ── Local UI State ───────────────────────────────────
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [viewOpen, setViewOpen] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [editing,       setEditing]       = useState(null);
+  const [form,          setForm]          = useState(emptyForm);
+  const [modalOpen,     setModalOpen]     = useState(false);
+  const [viewOpen,      setViewOpen]      = useState(false);
+  const [errors,        setErrors]        = useState({});
+  const [organizations, setOrganizations] = useState([]);  // ✅ org list for dropdown
 
-  // ── Derived ──────────────────────────────────────────
-  // Use allEmployees (full list) so the dropdown always shows every
-  // department, regardless of the current filter or page.
   const departments = [
     ...new Set(allEmployees.map((e) => e.department).filter(Boolean)),
   ].sort();
 
-  // ── Reset Form ───────────────────────────────────────
-  const resetForm = useCallback(() => {
-    setEditing(null);
-    setForm(emptyForm);
-  }, []);
-
+  const resetForm   = useCallback(() => { setEditing(null); setForm(emptyForm); }, []);
   const clearErrors = () => setErrors({});
 
-  // ── Fetch paginated employees (re-runs on filter/page change) ──
+  // ── Fetch employees on filter/page change ────────────────────────────────
   useEffect(() => {
     dispatch(fetchEmployees({ keyword, department, page }));
   }, [dispatch, keyword, department, page]);
 
-  // ── Fetch ALL employees once (for department dropdown) ──
+  // ── Fetch all employees once (for department filter) ─────────────────────
   useEffect(() => {
     dispatch(fetchAllEmployees());
   }, [dispatch]);
 
-  // ── Submit ───────────────────────────────────────────
+  // ── Fetch organizations for dropdown ─────────────────────────────────────
+  useEffect(() => {
+    getOrganizations({ page: 0, size: 100 })
+      .then((data) => setOrganizations(data?.content || []))
+      .catch(() => {});
+  }, []);
+
+  // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearErrors();
 
     if (editing) {
       const updatePayload = {
-        username: form.username,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        password: form.password,
+        username:    form.username,
+        firstName:   form.firstName,
+        lastName:    form.lastName,
+        email:       form.email,
+        password:    form.password,
         phoneNumber: form.phoneNumber,
-        department: form.department,
-        status: form.status,
+        department:  form.department,
+        status:      form.status,
+        orgId:       form.orgId || null,       // ✅ send orgId
+        companyName: form.companyName || null, // ✅ send companyName
       };
 
       const result = await dispatch(
@@ -116,19 +123,20 @@ export function useEmployee() {
         setModalOpen(false);
         resetForm();
         dispatch(fetchEmployees({ keyword, department, page }));
-        dispatch(fetchAllEmployees()); // ← keep dropdown in sync after edits
+        dispatch(fetchAllEmployees());
       } else {
         const fieldErrors = parseValidationErrors(result.payload);
         if (hasFieldErrors(fieldErrors)) {
           setErrors(fieldErrors);
         } else {
-          Toast.fire({
-            icon: "error",
-            title: fieldErrors._general || "Update failed",
-          });
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Update failed" });
         }
       }
     } else {
+      if (form.role === "ADMIN") {
+        setErrors({ role: "ADMIN role is not allowed" });
+        return;
+      }
       const result = await dispatch(addEmployeeThunk(form));
 
       if (addEmployeeThunk.fulfilled.match(result)) {
@@ -136,23 +144,20 @@ export function useEmployee() {
         setModalOpen(false);
         resetForm();
         dispatch(fetchEmployees({ keyword, department, page }));
-        dispatch(fetchAllEmployees()); // ← new employee might have a new department
+        dispatch(fetchAllEmployees());
       } else {
         const fieldErrors = parseValidationErrors(result.payload);
         if (hasFieldErrors(fieldErrors)) {
           setErrors(fieldErrors);
         } else {
-          Toast.fire({
-            icon: "error",
-            title: fieldErrors._general || "Add failed",
-          });
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Add failed" });
         }
       }
     }
   };
 
-  // ── Delete ───────────────────────────────────────────
-  const handleDelete = async (id) => {
+  // ── Delete ───────────────────────────────────────────────────────────────
+  const handleDelete = async (employeeCode) => {
     const res = await Swal.fire({
       title: "Delete Employee?",
       icon: "warning",
@@ -160,60 +165,58 @@ export function useEmployee() {
     });
 
     if (res.isConfirmed) {
-      const result = await dispatch(softDeleteEmployeeThunk(id));
+      const emp = employees.find((e) => e.employeeCode === employeeCode);
+      if (!emp) return;
+
+      const result = await dispatch(softDeleteEmployeeThunk(emp.employeeId));
       if (softDeleteEmployeeThunk.fulfilled.match(result)) {
         Toast.fire({ icon: "success", title: "Deleted" });
         dispatch(fetchEmployees({ keyword, department, page }));
-        dispatch(fetchAllEmployees()); // ← keep department list fresh
+        dispatch(fetchAllEmployees());
       } else {
         Toast.fire({ icon: "error", title: "Delete failed" });
       }
     }
   };
 
-  // ── View ─────────────────────────────────────────────
-  const handleView = (id) => {
-    dispatch(fetchEmployeeTasks(id));
+  // ── View ─────────────────────────────────────────────────────────────────
+  const handleView = (employeeCode) => {
+    const emp = employees.find((e) => e.employeeCode === employeeCode);
+    if (!emp) return;
+
+    dispatch(setSelectedEmployee({ ...emp, tasks: [] }));
     setViewOpen(true);
+
+    if (emp.employeeId) {
+      dispatch(fetchEmployeeTasks(emp.employeeId));
+    }
   };
 
-  // ── Edit ─────────────────────────────────────────────
+  // ── Edit ─────────────────────────────────────────────────────────────────
   const handleEdit = (row) => {
     setEditing(row);
+    clearErrors();
     setForm({
-      username: row.username || "",
-      firstName: row.firstName || "",
-      lastName: row.lastName || "",
-      email: row.email || "",
-      password: row.password || "",
+      username:    row.username    || "",
+      firstName:   row.firstName   || "",
+      lastName:    row.lastName    || "",
+      email:       row.email       || "",
+      password:    row.password    || "",
       phoneNumber: row.phoneNumber || "",
-      department: row.department || "",
-      status: row.status || "ACTIVE",
+      department:  row.department  || "",
+      status:      row.status      || "ACTIVE",
+      role:        row.role        || "EMPLOYEE",
+      companyName: row.companyName || "",   // ✅ prefill company name
+      orgId:       row.orgId       || "",   // ✅ prefill orgId
     });
     setModalOpen(true);
   };
 
-  // ── Open Add Modal ───────────────────────────────────
-  const openAddModal = () => {
-    resetForm();
-    setModalOpen(true);
-  };
-
-  // ── Close Modal ──────────────────────────────────────
-  const closeModal = () => {
-    setModalOpen(false);
-    resetForm();
-    clearErrors();
-  };
-
-  // ── Close View Drawer ────────────────────────────────
-  const closeViewDrawer = () => {
-    setViewOpen(false);
-    dispatch(clearSelected());
-  };
+  const openAddModal    = () => { resetForm(); clearErrors(); setModalOpen(true); };
+  const closeModal      = () => { setModalOpen(false); resetForm(); clearErrors(); };
+  const closeViewDrawer = () => { setViewOpen(false); dispatch(clearSelected()); };
 
   return {
-    // redux state
     employees,
     loading,
     totalPages,
@@ -222,29 +225,25 @@ export function useEmployee() {
     page,
     selectedEmployee,
     departments,
+    organizations,      // ✅ expose org list
 
-    // dispatch helpers
-    setKeyword: (val) => dispatch(setKeyword(val)),
+    setKeyword:    (val) => dispatch(setKeyword(val)),
     setDepartment: (val) => dispatch(setDepartment(val)),
-    setPage: (val) => dispatch(setPage(val)),
+    setPage:       (val) => dispatch(setPage(val)),
 
-    // form state
     editing,
     form,
     setForm,
     errors,
 
-    // modal state
     modalOpen,
     openAddModal,
     closeModal,
 
-    // view drawer state
     viewOpen,
     handleView,
     closeViewDrawer,
 
-    // handlers
     handleSubmit,
     handleDelete,
     handleEdit,

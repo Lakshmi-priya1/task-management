@@ -2,7 +2,21 @@
 export const BASE_URL = "http://localhost:8080";
 
 export const ENDPOINTS = {
-  login: `/admin/login`,
+  register: `/users/create`,
+  getUser: `/users`,
+  getUserById: (id) => `/users/${id}`,
+  updateUser:(id)=>`/users/${id}`,
+  deleteUser: (id) => `/users/${id}`,
+  login: `/auth/login`,
+
+  //organization
+  addOrganization: `/organizations/add`,
+  getAllOrganizations: `/organizations`,
+  getOrganizationById: (id) => `/organizations/${id}`,
+  updateOrganization: (id) => `/organizations/update/${id}`,
+  deleteOrganization: (id) => `/organizations/delete/${id}`,
+  softDeleteOrganization: (id) => `/organizations/soft-delete/${id}`,
+
 
   // TASKS
   addTask: `/tasks/add`,
@@ -19,6 +33,9 @@ export const ENDPOINTS = {
   updateEmployee: (id) => `/employees/update/${id}`,
   deleteEmployee: (id) => `/employees/delete/${id}`,
   softDeleteEmployee: (id) => `/employees/soft-delete/${id}`,
+  bulkImportEmployees: `/employees/bulk`,
+  importEmployeesExcel: `/employees/import`,
+  exportEmployeesExcel: `/employees/export`,
 
   // PROJECTS
   addProject: `/projects/add`,
@@ -43,6 +60,9 @@ export const ENDPOINTS = {
   updateMilestone: (id) => `/milestones/update/${id}`,
   deleteMilestone: (id) => `/milestones/delete/${id}`,
   softDeleteMilestone: (id) => `/milestones/soft-delete/${id}`,
+
+  // MY TASKS (for logged-in employee)
+  getMyTasks: `/tasks/my-tasks`,
 
   // TASKS
 assignTaskToEmployee: (taskId, employeeId) =>

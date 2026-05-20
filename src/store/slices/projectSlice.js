@@ -29,7 +29,7 @@ export const fetchAllEmployees = createAsyncThunk(
   "projects/fetchEmployees",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await getEmployees({ page: 0, size: 100 });
+      const res = await getEmployees({ page: 0, size: 10000 });
       return res?.content || [];
     } catch (err) {
       return rejectWithValue(err.response?.data ?? { error: err.message });
@@ -102,7 +102,7 @@ export const removeEmployeeThunk = createAsyncThunk(
   async ({ projectId, employeeId }, { rejectWithValue }) => {
     try {
       await removeEmployeeFromProject(projectId, employeeId);
-      return { projectId, employeeId: Number(employeeId) };
+      return { projectId, employeeId };
     } catch (err) {
       return rejectWithValue(err.response?.data ?? { error: err.message });
     }
@@ -199,11 +199,11 @@ const projectSlice = createSlice({
       .addCase(assignEmployeeThunk.fulfilled, (state, action) => {
         const { projectId, employeeId } = action.payload;
         const project = state.list.find(
-          (p) => Number(p.projectId) === Number(projectId)
-        );
-        if (project && !project.employeeIds?.includes(employeeId)) {
-          project.employeeIds = [...(project.employeeIds || []), employeeId];
-        }
+  (p) => String(p.projectId) === String(projectId)
+);
+if (project && !project.employeeIds?.map(String).includes(String(employeeId))) {
+  project.employeeIds = [...(project.employeeIds || []), employeeId];
+}
       })
       .addCase(assignEmployeeThunk.rejected, (state, action) => {
         state.error = action.payload;
@@ -213,12 +213,12 @@ const projectSlice = createSlice({
       .addCase(removeEmployeeThunk.fulfilled, (state, action) => {
         const { projectId, employeeId } = action.payload;
         const project = state.list.find(
-          (p) => Number(p.projectId) === Number(projectId)
-        );
-        if (project) {
-          project.employeeIds = project.employeeIds?.filter(
-            (id) => id !== employeeId
-          );
+  (p) => String(p.projectId) === String(projectId)
+);
+if (project) {
+  project.employeeIds = project.employeeIds?.filter(
+    (id) => String(id) !== String(employeeId)
+  );
         }
       })
       .addCase(removeEmployeeThunk.rejected, (state, action) => {

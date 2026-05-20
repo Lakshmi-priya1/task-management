@@ -1,4 +1,3 @@
-// hooks/useTask.js
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
@@ -18,6 +17,11 @@ import {
   setPage,
 } from "../store/slices/taskSlice";
 
+import {
+  parseValidationErrors,
+  hasFieldErrors,
+} from "../utils/validationErrorHandler";
+
 export const Toast = Swal.mixin({
   toast: true, position: "top-end",
   showConfirmButton: false, timer: 2500,
@@ -30,8 +34,9 @@ export const emptyForm = {
   dueDate: "", projectId: "", milestoneId: "",
 };
 
-export const TASK_STATUSES  = ["PENDING", "IN_PROGRESS", "COMPLETED"];
-export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
+export const TASK_STATUSES    = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+export const TASK_PRIORITIES  = ["LOW", "MEDIUM", "HIGH"];
+export const MAX_VISIBLE_CHIPS = 4;
 
 export function useTask() {
   const dispatch = useDispatch();
@@ -49,27 +54,45 @@ export function useTask() {
     page,
   } = useSelector((state) => state.tasks);
 
-  // ── Local UI state ───────────────────────────────────
+  // ── Form / modal state ───────────────────────────────
   const [editing,   setEditing]   = useState(null);
   const [form,      setForm]      = useState(emptyForm);
   const [modalOpen, setModalOpen] = useState(false);
+  const [errors,    setErrors]    = useState({});
+
+  // ── View drawer state ────────────────────────────────
   const [viewOpen,  setViewOpen]  = useState(false);
   const [selected,  setSelected]  = useState(null);
 
-  // assign drawer
+  // ── Assign drawer state ──────────────────────────────
   const [assignDrawerOpen,    setAssignDrawerOpen]    = useState(false);
   const [selectedTask,        setSelectedTask]        = useState(null);
   const [assignEmployeeId,    setAssignEmployeeId]    = useState("");
   const [assignedEmployeeIds, setAssignedEmployeeIds] = useState([]);
   const [projectMembers,      setProjectMembers]      = useState([]);
-  // assignSuccess is now an object: { message: string, type: "success" | "error" } or null
   const [assignSuccess,       setAssignSuccess]       = useState(null);
+
+  // ── Chip toggle state ────────────────────────────────
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!assignDrawerOpen) setShowAll(false);
+  }, [assignDrawerOpen]);
+
+  const visibleChips = showAll
+    ? assignedEmployeeIds
+    : assignedEmployeeIds.slice(0, MAX_VISIBLE_CHIPS);
+
+  const hiddenCount = assignedEmployeeIds.length - MAX_VISIBLE_CHIPS;
 
   // ── Reset form ───────────────────────────────────────
   const resetForm = useCallback(() => {
     setEditing(null);
     setForm(emptyForm);
   }, []);
+
+  const clearErrors = () => setErrors({});
 
   // ── Fetch on filter / page change ────────────────────
   useEffect(() => {
@@ -102,11 +125,11 @@ export function useTask() {
 
   const availableMembers = employees.filter(
     (e) =>
-      projectMembers.includes(Number(e.employeeId)) &&
-      !assignedEmployeeIds.includes(Number(e.employeeId))
+      projectMembers.map(String).includes(String(e.employeeId)) &&
+      !assignedEmployeeIds.map(String).includes(String(e.employeeId))
   );
 
-  // ── Helpers for view sections ────────────────────────
+  // ── View helpers ─────────────────────────────────────
   const getSelectedEmployeeLabel = () => {
     const ids = selected?.employeeIds
       ? selected.employeeIds.map(Number)
@@ -135,8 +158,20 @@ export function useTask() {
   // ── Submit ───────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.projectId)   { Toast.fire({ icon: "error", title: "Project required" });   return; }
-    if (!form.milestoneId) { Toast.fire({ icon: "error", title: "Milestone required" }); return; }
+    clearErrors();
+
+    // ── Frontend validation ──────────────────────────
+    const frontendErrors = {};
+    if (!form.projectId)            frontendErrors.projectId   = "Project is required";
+    if (!form.milestoneId)          frontendErrors.milestoneId = "Milestone is required";
+    if (!form.title?.trim())        frontendErrors.title       = "Title is required";
+    if (!form.description?.trim())  frontendErrors.description = "Description is required";
+    if (!form.dueDate)              frontendErrors.dueDate     = "Due date is required";
+
+    if (Object.keys(frontendErrors).length > 0) {
+      setErrors(frontendErrors);
+      return;
+    }
 
     const payload = {
       title:       form.title,
@@ -151,21 +186,33 @@ export function useTask() {
       const result = await dispatch(updateTaskThunk({ id: editing.id, data: payload }));
       if (updateTaskThunk.fulfilled.match(result)) {
         Toast.fire({ icon: "success", title: "Updated Successfully" });
+        setModalOpen(false);
+        resetForm();
+        dispatch(fetchTasks({ keyword, status, page, size: 5 }));
       } else {
-        Toast.fire({ icon: "error", title: result.payload || "Update failed" }); return;
+        const fieldErrors = parseValidationErrors(result.payload);
+        if (hasFieldErrors(fieldErrors)) {
+          setErrors(fieldErrors);
+        } else {
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Update failed" });
+        }
       }
     } else {
       const result = await dispatch(addTaskThunk(payload));
       if (addTaskThunk.fulfilled.match(result)) {
         Toast.fire({ icon: "success", title: "Added Successfully" });
+        setModalOpen(false);
+        resetForm();
+        dispatch(fetchTasks({ keyword, status, page, size: 5 }));
       } else {
-        Toast.fire({ icon: "error", title: result.payload || "Add failed" }); return;
+        const fieldErrors = parseValidationErrors(result.payload);
+        if (hasFieldErrors(fieldErrors)) {
+          setErrors(fieldErrors);
+        } else {
+          Toast.fire({ icon: "error", title: fieldErrors._general || "Add failed" });
+        }
       }
     }
-
-    setModalOpen(false);
-    resetForm();
-    dispatch(fetchTasks({ keyword, status, page, size: 5 }));
   };
 
   // ── Delete ───────────────────────────────────────────
@@ -197,6 +244,7 @@ export function useTask() {
       (m) => Number(m.milestoneId) === Number(task.milestoneId)
     );
     setEditing(task);
+    clearErrors();
     setForm({
       title:       task.title       || "",
       description: task.description || "",
@@ -209,23 +257,21 @@ export function useTask() {
     setModalOpen(true);
   };
 
-  // ── Assign drawer — open ─────────────────────────────
+  // ── Open assign drawer ───────────────────────────────
   const openAssignDrawer = (task) => {
     setSelectedTask(task);
     setAssignEmployeeId("");
-    setAssignSuccess(null); // reset to null
-
+    setAssignSuccess(null);
     const existing = task.employeeIds
-      ? task.employeeIds.map(Number)
+      ? task.employeeIds.map(String)
       : task.employeeId
-      ? [Number(task.employeeId)]
+      ? [String(task.employeeId)]
       : [];
     setAssignedEmployeeIds(existing);
-
     const milestone = milestones.find(
       (m) => Number(m.milestoneId) === Number(task.milestoneId)
     );
-    setProjectMembers(milestone?.employeeIds?.map(Number) || []);
+    setProjectMembers((milestone?.employeeIds || []).map(String));
     setAssignDrawerOpen(true);
   };
 
@@ -236,11 +282,11 @@ export function useTask() {
       assignEmployeeToTaskThunk({ taskId: selectedTask.id, employeeId: assignEmployeeId })
     );
     if (assignEmployeeToTaskThunk.fulfilled.match(result)) {
-      const newId = Number(assignEmployeeId);
-      setAssignedEmployeeIds((prev) => (prev.includes(newId) ? prev : [...prev, newId]));
-      const emp  = employees.find((e) => Number(e.employeeId) === newId);
+      setAssignedEmployeeIds((prev) =>
+        prev.map(String).includes(String(assignEmployeeId)) ? prev : [...prev, String(assignEmployeeId)]
+      );
+      const emp  = employees.find((e) => String(e.employeeId) === String(assignEmployeeId));
       const name = emp ? `${emp.firstName} ${emp.lastName || ""}`.trim() : "Employee";
-      // ✅ Set object with type "success" — no Toast
       setAssignSuccess({ message: `${name} assigned successfully`, type: "success" });
       setAssignEmployeeId("");
       dispatch(fetchTasks({ keyword, status, page, size: 5 }));
@@ -256,10 +302,9 @@ export function useTask() {
       unassignEmployeeFromTaskThunk({ taskId: selectedTask.id, employeeId })
     );
     if (unassignEmployeeFromTaskThunk.fulfilled.match(result)) {
-      const emp  = employees.find((e) => Number(e.employeeId) === Number(employeeId));
+      const emp  = employees.find((e) => String(e.employeeId) === String(employeeId));
       const name = emp ? `${emp.firstName} ${emp.lastName || ""}`.trim() : "Employee";
-      setAssignedEmployeeIds((prev) => prev.filter((id) => id !== Number(employeeId)));
-      // ✅ Set object with type "error" (red) — no Toast
+      setAssignedEmployeeIds((prev) => prev.filter((id) => String(id) !== String(employeeId)));
       setAssignSuccess({ message: `${name} removed`, type: "error" });
       dispatch(fetchTasks({ keyword, status, page, size: 5 }));
     } else {
@@ -267,27 +312,24 @@ export function useTask() {
     }
   };
 
-  const openAddModal  = () => { resetForm(); setModalOpen(true); };
-  const closeModal    = () => { setModalOpen(false); resetForm(); };
+  // ── Modal / drawer helpers ───────────────────────────
+  const openAddModal      = () => { resetForm(); clearErrors(); setModalOpen(true); };
+  const closeModal        = () => { setModalOpen(false); resetForm(); clearErrors(); };
   const closeViewDrawer   = () => setViewOpen(false);
-  const closeAssignDrawer = () => {
-    setAssignDrawerOpen(false);
-    setAssignSuccess(null); // reset on close
-  };
+  const closeAssignDrawer = () => { setAssignDrawerOpen(false); setAssignSuccess(null); };
 
   return {
-    // redux state
+    // redux
     tasks, projects, milestones, employees,
     loading, totalPages, keyword, status, page,
-    // dispatch helpers
     setKeyword:  (val) => dispatch(setKeyword(val)),
     setStatus:   (val) => dispatch(setStatus(val)),
     setPage:     (val) => dispatch(setPage(val)),
     // derived
     enrichedTasks, filteredMilestones, availableMembers,
-    // form state
-    editing, form, setForm,
-    // modal state
+    // form
+    editing, form, setForm, errors,
+    // modal
     modalOpen, openAddModal, closeModal,
     // view drawer
     viewOpen, selected, handleView, closeViewDrawer,
@@ -298,6 +340,8 @@ export function useTask() {
     assignedEmployeeIds,
     assignEmployeeId, setAssignEmployeeId,
     assignSuccess, setAssignSuccess,
+    // chip toggle
+    showAll, setShowAll, visibleChips, hiddenCount,
     // handlers
     handleSubmit, handleDelete, handleEdit,
     openAssignDrawer, handleAssign, handleUnassign,

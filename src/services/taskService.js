@@ -95,6 +95,15 @@ export const assignEmployeeToTask = async (taskId, employeeId) => {
   }
 };
 
+export const getMyTasks = async () => {
+  try {
+    const response = await axiosInstance.get(ENDPOINTS.getMyTasks);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to fetch my tasks");
+  }
+};
+
 export const unassignEmployeeFromTask = async (taskId, employeeId) => {
   try {
     const response = await axiosInstance.delete(

@@ -32,17 +32,34 @@ const getStatusChip = (status, isDark) => {
   );
 };
 
-function DataTable({ data = [], columns = [], fields = [], idField = "id", handleEdit, handleDelete, handleView, extraActions = [], loading = false, page = 0, totalPages = 1, pageSize = 5, onPageChange }) {
+function DataTable({
+  data = [],
+  columns = [],
+  fields = [],
+  idField = "id",
+  handleEdit,
+  handleDelete,
+  handleView,
+  hideEdit = false,
+  hideDelete = false,
+  hideExtraActions = false,
+  extraActions = [],
+  loading = false,
+  page = 0,
+  totalPages = 1,
+  pageSize = 5,
+  onPageChange,
+}) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
-  const headBg = isDark ? "#13131f" : "#f8f7ff";
-  const headColor = "#8b5cf6";
-  const headBorder = isDark ? "#2d2d4e" : "#ede9fe";
-  const rowBg = isDark ? "#1a1a2e" : "#fff";
-  const rowHover = isDark ? "#22223a" : "#f5f3ff";
-  const rowBorder = isDark ? "#2d2d4e" : "#f1f5f9";
-  const cellColor = isDark ? "#e2e8f0" : "#1e293b";
+  const headBg       = isDark ? "#13131f" : "#f8f7ff";
+  const headColor    = "#8b5cf6";
+  const headBorder   = isDark ? "#2d2d4e" : "#ede9fe";
+  const rowBg        = isDark ? "#1a1a2e" : "#fff";
+  const rowHover     = isDark ? "#22223a" : "#f5f3ff";
+  const rowBorder    = isDark ? "#2d2d4e" : "#f1f5f9";
+  const cellColor    = isDark ? "#e2e8f0" : "#1e293b";
   const cellSecondary = isDark ? "#94a3b8" : "#475569";
 
   return (
@@ -52,8 +69,15 @@ function DataTable({ data = [], columns = [], fields = [], idField = "id", handl
           <TableHead>
             <TableRow>
               {["#", ...columns, "Actions"].map((col, i) => (
-                <TableCell key={i} align={i === columns.length + 1 ? "center" : "left"}
-                  sx={{ background: headBg, fontWeight: 800, fontSize: "0.75rem", color: headColor, textTransform: "uppercase", letterSpacing: 1, borderBottom: `2px solid ${headBorder}`, py: 2 }}>
+                <TableCell
+                  key={i}
+                  align={i === columns.length + 1 ? "center" : "left"}
+                  sx={{
+                    background: headBg, fontWeight: 800, fontSize: "0.75rem",
+                    color: headColor, textTransform: "uppercase", letterSpacing: 1,
+                    borderBottom: `2px solid ${headBorder}`, py: 2,
+                  }}
+                >
                   {col}
                 </TableCell>
               ))}
@@ -72,23 +96,34 @@ function DataTable({ data = [], columns = [], fields = [], idField = "id", handl
                 <TableCell colSpan={columns.length + 2} align="center" sx={{ py: 8, border: "none", bgcolor: rowBg }}>
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                     <InboxRounded sx={{ fontSize: 48, color: isDark ? "#3d3d5c" : "#cbd5e1" }} />
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#4b5563" : "#94a3b8" }}>No records found</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#4b5563" : "#94a3b8" }}>
+                      No records found
+                    </Typography>
                   </Box>
                 </TableCell>
               </TableRow>
             ) : (
               data.map((item, index) => (
-                <TableRow key={index} sx={{
-                  cursor: "pointer", transition: "all 0.18s ease", backgroundColor: rowBg,
-                  "&:hover": { backgroundColor: rowHover, transform: "scale(1.002)", boxShadow: "0 2px 12px rgba(99,102,241,0.08)", "& td": { borderColor: "transparent" } },
-                  "& td:first-of-type": { borderRadius: "12px 0 0 12px" },
-                  "& td:last-of-type": { borderRadius: "0 12px 12px 0" },
-                  "& td": { borderBottom: `1px solid ${rowBorder}`, py: 1.8, fontSize: "0.875rem", color: cellColor },
-                }}>
+                <TableRow
+                  key={index}
+                  sx={{
+                    cursor: "pointer", transition: "all 0.18s ease", backgroundColor: rowBg,
+                    "&:hover": {
+                      backgroundColor: rowHover, transform: "scale(1.002)",
+                      boxShadow: "0 2px 12px rgba(99,102,241,0.08)",
+                      "& td": { borderColor: "transparent" },
+                    },
+                    "& td:first-of-type": { borderRadius: "12px 0 0 12px" },
+                    "& td:last-of-type":  { borderRadius: "0 12px 12px 0" },
+                    "& td": { borderBottom: `1px solid ${rowBorder}`, py: 1.8, fontSize: "0.875rem", color: cellColor },
+                  }}
+                >
+                  {/* Row number */}
                   <TableCell sx={{ fontWeight: 700, color: `${isDark ? "#4b5563" : "#94a3b8"} !important`, fontSize: "0.8rem !important", minWidth: 40 }}>
                     {String(page * pageSize + index + 1).padStart(2, "0")}
                   </TableCell>
 
+                  {/* Data cells */}
                   {fields.map((field, i) => (
                     <TableCell key={i}>
                       {["dueDate", "startDate", "endDate"].includes(field)
@@ -96,41 +131,71 @@ function DataTable({ data = [], columns = [], fields = [], idField = "id", handl
                         : field === "status" || field === "priority"
                         ? getStatusChip(item[field], isDark)
                         : (
-                          <Typography sx={{ fontSize: "0.875rem", fontWeight: field === fields[0] ? 700 : 400, color: field === fields[0] ? cellColor : cellSecondary }}>
+                          <Typography sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: field === fields[0] ? 700 : 400,
+                            color: field === fields[0] ? cellColor : cellSecondary,
+                          }}>
                             {item[field] || "-"}
                           </Typography>
                         )}
                     </TableCell>
                   ))}
 
+                  {/* Actions */}
                   <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center">
+
+                      {/* View — always visible */}
                       <Tooltip title="View" arrow>
-                        <IconButton size="small" onClick={() => handleView?.(item[idField])}
-                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.1)", "&:hover": { backgroundColor: "rgba(59,130,246,0.2)" } }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleView?.(item[idField])}
+                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#3b82f6", backgroundColor: "rgba(59,130,246,0.1)", "&:hover": { backgroundColor: "rgba(59,130,246,0.2)" } }}
+                        >
                           <Visibility sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Edit" arrow>
-                        <IconButton size="small" onClick={() => handleEdit?.(item)}
-                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.1)", "&:hover": { backgroundColor: "rgba(139,92,246,0.2)" } }}>
-                          <Edit sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete" arrow>
-                        <IconButton size="small" onClick={() => handleDelete?.(item[idField])}
-                          sx={{ width: 32, height: 32, borderRadius: "10px", color: "#ef4444", backgroundColor: "rgba(239,68,68,0.1)", "&:hover": { backgroundColor: "rgba(239,68,68,0.2)" } }}>
-                          <Delete sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      {extraActions.map((action, ai) => (
+
+                      {/* Edit — hidden when hideEdit=true */}
+                      {!hideEdit && (
+                        <Tooltip title="Edit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit?.(item)}
+                            sx={{ width: 32, height: 32, borderRadius: "10px", color: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.1)", "&:hover": { backgroundColor: "rgba(139,92,246,0.2)" } }}
+                          >
+                            <Edit sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* Delete — hidden when hideDelete=true */}
+                      {!hideDelete && (
+                        <Tooltip title="Delete" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete?.(item[idField])}
+                            sx={{ width: 32, height: 32, borderRadius: "10px", color: "#ef4444", backgroundColor: "rgba(239,68,68,0.1)", "&:hover": { backgroundColor: "rgba(239,68,68,0.2)" } }}
+                          >
+                            <Delete sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* Extra actions (Assign Team, Assign Employee) — hidden when hideExtraActions=true */}
+                      {!hideExtraActions && extraActions.map((action, ai) => (
                         <Tooltip key={ai} title={action.label} arrow>
-                          <IconButton size="small" onClick={() => action.onClick(item[idField], item)}
-                            sx={{ width: 32, height: 32, borderRadius: "10px", color: action.color || "#06b6d4", backgroundColor: "rgba(6,182,212,0.1)", "&:hover": { backgroundColor: "rgba(6,182,212,0.2)" } }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => action.onClick(item[idField], item)}
+                            sx={{ width: 32, height: 32, borderRadius: "10px", color: action.color || "#06b6d4", backgroundColor: action.bg || "rgba(6,182,212,0.1)", "&:hover": { backgroundColor: "rgba(6,182,212,0.2)" } }}
+                          >
                             {action.icon || <PersonAddRounded sx={{ fontSize: 16 }} />}
                           </IconButton>
                         </Tooltip>
                       ))}
+
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -142,7 +207,11 @@ function DataTable({ data = [], columns = [], fields = [], idField = "id", handl
 
       {onPageChange && (
         <Box sx={{ py: 2.5, px: 3, display: "flex", justifyContent: "center", borderTop: `1px solid ${rowBorder}`, bgcolor: rowBg }}>
-          <Pagination count={totalPages} page={page + 1} onChange={(e, value) => onPageChange(value - 1)} shape="rounded"
+          <Pagination
+            count={totalPages}
+            page={page + 1}
+            onChange={(e, value) => onPageChange(value - 1)}
+            shape="rounded"
             sx={{
               "& .MuiPaginationItem-root": { borderRadius: "10px", fontWeight: 700, fontSize: 13, color: isDark ? "#94a3b8" : "#64748b" },
               "& .Mui-selected": { backgroundColor: "#6366f1 !important", color: "#fff !important" },

@@ -98,24 +98,22 @@ export const chartBoxSx = { height: 300 };
 
 // ── Stat card data (icons come from PageContent to keep this file icon-free) ──
 export const getStatCards = (stats) => [
-  {
-    title: "Total Tasks",
-    value: stats.total,
-    color: "linear-gradient(135deg,#8b5cf6,#a855f7)",
-  },
-  {
-    title: "Completed",
-    value: stats.completed,
-    color: "linear-gradient(135deg,#10b981,#34d399)",
-  },
-  {
-    title: "In Progress",
-    value: stats.progress,
-    color: "linear-gradient(135deg,#6366f1,#818cf8)",
-  },
-  {
-    title: "Pending",
-    value: stats.pending,
-    color: "linear-gradient(135deg,#f59e0b,#fb923c)",
-  },
+  { title: "Total Tasks",  value: stats.total,     color: "linear-gradient(135deg,#8b5cf6,#a855f7)" },
+  { title: "Completed",    value: stats.completed, color: "linear-gradient(135deg,#10b981,#34d399)" },
+  { title: "In Progress",  value: stats.progress,  color: "linear-gradient(135deg,#6366f1,#818cf8)" },
+  { title: "Pending",      value: stats.pending,   color: "linear-gradient(135deg,#f59e0b,#fb923c)" },
+];
+
+export const getMilestoneStatCards = (ms, ts) => [
+  { title: "Total Milestones",     value: ms.total,     color: "linear-gradient(135deg,#8b5cf6,#a855f7)" },
+  { title: "Milestones Done",      value: ms.completed, color: "linear-gradient(135deg,#10b981,#34d399)" },
+  { title: "Total Tasks",          value: ts.total,     color: "linear-gradient(135deg,#6366f1,#818cf8)" },
+  { title: "Tasks Completed",      value: ts.completed, color: "linear-gradient(135deg,#f59e0b,#fb923c)" },
+];
+
+export const getEmployeeStatCards = (stats) => [
+  { title: "My Tasks",    value: stats.total,     color: "linear-gradient(135deg,#8b5cf6,#a855f7)" },
+  { title: "Completed",   value: stats.completed, color: "linear-gradient(135deg,#10b981,#34d399)" },
+  { title: "In Progress", value: stats.progress,  color: "linear-gradient(135deg,#6366f1,#818cf8)" },
+  { title: "Pending",     value: stats.pending,   color: "linear-gradient(135deg,#f59e0b,#fb923c)" },
 ];

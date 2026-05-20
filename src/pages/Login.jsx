@@ -141,8 +141,8 @@ export default function Login() {
         <Box sx={s.formWrapper}>
 
           <Typography sx={s.heading} className="lp-fade-up-1">
-            Welcome{" "}
-            <Box component="span" sx={s.headingItalic}>Back</Box>
+            Task{" "}
+            <Box component="span" sx={s.headingItalic}>Management</Box>
           </Typography>
           <Typography sx={s.subheading} className="lp-fade-up-2">
             Sign in to manage employees, projects and productivity.
@@ -244,11 +244,6 @@ export default function Login() {
               </Button>
             </form>
           </Paper>
-
-          <Box sx={s.signupRow}>
-            Don't have an account?
-            <Link to="/register" style={s.signupLink}>Create one</Link>
-          </Box>
         </Box>
       </Box>
     </Box>
